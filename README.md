@@ -20,7 +20,7 @@
 ---
 
 > [!TIP]
-> ### 🚀 Recommended Minecraft Host — UltraServers
+> **🚀 Recommended Minecraft Host — UltraServers**
 > Looking for a high-performance, lag-free server to run your Minecraft network and RetroMail dashboard? We are proudly affiliated with **UltraServers**!
 > 
 > Get enterprise-grade hosting with ultra-fast NVMe storage, dedicated CPUs, custom control panels, and 24/7 support.
@@ -298,3 +298,12 @@ Supply one of the following in your HTTP requests:
   "message": "Email sent successfully"
 }
 ```
+
+---
+
+## 📊 Data Collection & Telemetry
+
+RetroMail collects anonymous usage statistics and checks for updates. You can opt-out of these features at any time:
+
+* **bStats Metrics:** Tracks anonymous data (e.g. server software, player count, Java version, country). This helps us monitor plugin adoption. You can disable this by setting `enabled: false` in your server's `plugins/bStats/config.yml`.
+* **Update Checker:** Automatically queries the GitHub Releases API at server startup to check for the latest versions. No personal or server identification data is sent.
