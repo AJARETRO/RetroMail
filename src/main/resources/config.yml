@@ -66,3 +66,10 @@ mail-handler:
     username: "niloyahmed2484@gmail.com"
     password: "YOUR_IMAP_PASSWORD_HERE"
     poll-interval-seconds: 30
+
+# Web Dashboard Branding & Links (Customizes the staff portal links dynamically)
+branding:
+  server-name: 'Retro Network'
+  discord-link: 'https://discord.gg/retro'
+  documentation-link: 'https://docs.ajaretro.dev'
+  forum-link: 'https://forum.ajaretro.dev'

@@ -1,5 +1,5 @@
 name: RetroMail
-version: 1.0.1
+version: 1.0.2
 main: dev.retro.papersmtp.bungee.BungeePaperSMTP
 author: Retro
 description: BungeeCord proxy extension for RetroMail to synchronize subscription rewards across server networks.

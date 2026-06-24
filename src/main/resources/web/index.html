@@ -56,8 +56,8 @@
     <div id="app" class="w-full max-w-md mx-auto" v-cloak>
         <div class="glass-panel rounded-2xl p-8 flex flex-col gap-6">
             <div class="text-center flex flex-col items-center justify-center">
-                <h1 class="font-outfit text-4xl font-extrabold tracking-wider leading-none"><span class="text-red-600">AJA</span><span class="text-white">RETRO</span></h1>
-                <p class="text-gray-400 text-xs font-semibold uppercase tracking-widest mt-2">RetroMail Secure Portal</p>
+                <h1 class="font-outfit text-4xl font-extrabold tracking-wider leading-none text-white"><span class="text-red-600">{{ branding.serverName || 'AJA RETRO' }}</span></h1>
+                <p class="text-gray-400 text-xs font-semibold uppercase tracking-widest mt-2">{{ branding.serverName || 'RetroMail' }} Secure Portal</p>
             </div>
             
             <div v-if="errorMsg" class="bg-red-950/60 border border-red-800 text-red-300 p-3 rounded-lg text-sm text-center flex items-center justify-center gap-2">
@@ -82,6 +82,12 @@
                     <span v-else>Login Portal <i class="fa-solid fa-arrow-right ml-1"></i></span>
                 </button>
             </form>
+            
+            <div class="border-t border-white/5 pt-4 mt-2 flex justify-center gap-4 text-xs font-semibold text-gray-500">
+                <a v-if="branding.discordLink" :href="branding.discordLink" target="_blank" class="hover:text-slate-300 transition"><i class="fa-brands fa-discord"></i> Discord</a>
+                <a v-if="branding.forumLink" :href="branding.forumLink" target="_blank" class="hover:text-slate-300 transition"><i class="fa-solid fa-comments"></i> Forums</a>
+                <a v-if="branding.documentationLink" :href="branding.documentationLink" target="_blank" class="hover:text-slate-300 transition"><i class="fa-solid fa-book"></i> Docs</a>
+            </div>
         </div>
     </div>
 
@@ -93,6 +99,22 @@
                 const errorMsg = ref('');
                 const loading = ref(false);
                 const tokenKey = 'retromail_token';
+                const branding = ref({
+                    serverName: '',
+                    discordLink: '',
+                    documentationLink: '',
+                    forumLink: ''
+                });
+
+                const fetchBrandingInfo = async () => {
+                    try {
+                        const response = await fetch('/api/info');
+                        const data = await response.json();
+                        branding.value = data;
+                    } catch (e) {
+                        console.error('Failed to fetch branding info', e);
+                    }
+                };
 
                 const loginForm = ref({
                     username: '',
@@ -128,7 +150,8 @@
                     }
                 };
 
-                onMounted(() => {
+                onMounted(async () => {
+                    await fetchBrandingInfo();
                     const token = localStorage.getItem(tokenKey);
                     if (token) {
                         window.location.href = '/inbox.html';
@@ -139,6 +162,7 @@
                     errorMsg,
                     loading,
                     loginForm,
+                    branding,
                     handleLogin
                 };
             }

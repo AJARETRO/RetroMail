@@ -56,6 +56,11 @@ public class PluginConfig {
     public String imapPassword;
     public int imapPollInterval;
 
+    public String serverName;
+    public String discordLink;
+    public String documentationLink;
+    public String forumLink;
+
     private Map<String, Object> messagesConfig = new HashMap<>();
 
     public PluginConfig(MailPluginInterface plugin) {
@@ -156,6 +161,11 @@ public class PluginConfig {
         imapUsername = getString(config, "mail-handler.imap.username", "");
         imapPassword = getString(config, "mail-handler.imap.password", "");
         imapPollInterval = getInt(config, "mail-handler.imap.poll-interval-seconds", 30);
+
+        serverName = getString(config, "branding.server-name", "Retro Network");
+        discordLink = getString(config, "branding.discord-link", "https://discord.gg/retro");
+        documentationLink = getString(config, "branding.documentation-link", "https://docs.ajaretro.dev");
+        forumLink = getString(config, "branding.forum-link", "https://forum.ajaretro.dev");
     }
 
     private String getString(Map<String, Object> map, String path, String def) {

@@ -80,7 +80,7 @@ RetroMail is designed to scale with large networks. It utilizes a shared databas
 ## 🔧 Setup & Configuration
 
 ### 1. Installation
-1. Download `papersmtp-1.0.1.jar` from **[Modrinth](https://modrinth.com/plugin/retromail)**.
+1. Download `papersmtp-1.0.2.jar` from **[Modrinth](https://modrinth.com/plugin/retromail)**.
 2. Put the jar file into the `plugins/` directory of your Velocity/Bungee proxy and backend Minecraft servers.
 3. Start the servers to generate default files, then stop them.
 
@@ -118,6 +118,13 @@ mail-handler:
     username: "your-catchall-email@gmail.com"
     password: "your-app-password"
     poll-interval-seconds: 30
+
+# Web Dashboard Branding & Links (Customizes the staff portal links dynamically)
+branding:
+  server-name: 'Retro Network'
+  discord-link: 'https://discord.gg/retro'
+  documentation-link: 'https://docs.ajaretro.dev'
+  forum-link: 'https://forum.ajaretro.dev'
 ```
 
 ### 3. Brevo (Sendinblue) SMTP Setup Guide

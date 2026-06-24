@@ -22,7 +22,7 @@ import java.nio.file.Path;
 import java.util.UUID;
 import java.util.logging.Level;
 
-@Plugin(id = "retromail", name = "RetroMail", version = "1.0.1", description = "Allows players to subscribe to real-life newsletters and receive offline mail notifications via SMTP.", authors = {"Retro"})
+@Plugin(id = "retromail", name = "RetroMail", version = "1.0.2", description = "Allows players to subscribe to real-life newsletters and receive offline mail notifications via SMTP.", authors = {"Retro"})
 public class VelocityPaperSMTP implements MailPluginInterface {
     public static final MinecraftChannelIdentifier IDENTIFIER = MinecraftChannelIdentifier.from("papersmtp:queue");
 

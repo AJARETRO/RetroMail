@@ -72,6 +72,7 @@ public class MailHandlerServer {
             server.createContext("/api/upload-avatar", new UploadAvatarHandler());
             server.createContext("/api/send", new SendMailHandler());
             server.createContext("/api/tokens", new ApiTokensHandler());
+            server.createContext("/api/info", new InfoHandler());
             
             // Admin Routes
             server.createContext("/api/admin/permissions", new AdminPermissionsHandler());
@@ -406,6 +407,14 @@ public class MailHandlerServer {
                 staffInfo.put("role", user.role);
                 staffInfo.put("avatarPath", user.avatarPath);
                 data.put("profile", staffInfo);
+
+                // Add branding configuration
+                Map<String, String> branding = new HashMap<>();
+                branding.put("serverName", config.serverName);
+                branding.put("discordLink", config.discordLink);
+                branding.put("documentationLink", config.documentationLink);
+                branding.put("forumLink", config.forumLink);
+                data.put("branding", branding);
 
                 // 2. Filtered Mail List
                 List<StoredMail> mails = plugin.getDatabaseManager().getMailsForStaff(user, config.mailHandlerDomain);
@@ -994,6 +1003,27 @@ public class MailHandlerServer {
                 resp.put("status", "success");
                 resp.put("message", "Email sent successfully");
                 sendJSONResponse(exchange, 200, resp);
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "Server error: " + e.getMessage());
+            }
+        }
+    }
+
+    private class InfoHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
+                handleOptions(exchange);
+                return;
+            }
+            try {
+                PluginConfig config = plugin.getPluginConfig();
+                Map<String, String> info = new HashMap<>();
+                info.put("serverName", config.serverName);
+                info.put("discordLink", config.discordLink);
+                info.put("documentationLink", config.documentationLink);
+                info.put("forumLink", config.forumLink);
+                sendJSONResponse(exchange, 200, info);
             } catch (Exception e) {
                 sendResponse(exchange, 500, "Server error: " + e.getMessage());
             }

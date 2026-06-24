@@ -82,7 +82,7 @@
             <div class="w-full border-b border-white/5 px-6 py-4 flex items-center justify-between bg-slate-900/40 backdrop-blur-md shrink-0 relative z-40">
                 <!-- Logo Header (Top Left) -->
                 <a href="/inbox.html" class="flex items-center gap-2 select-none">
-                    <h1 class="font-outfit text-2xl font-extrabold tracking-wider leading-none"><span class="text-red-600">AJA</span><span class="text-white">RETRO</span></h1>
+                    <h1 class="font-outfit text-2xl font-extrabold tracking-wider leading-none"><span class="text-red-600">{{ branding.serverName || 'RetroMail' }}</span></h1>
                 </a>
 
                 <!-- Dropdown for profile/pfp (Top Right) -->
@@ -115,6 +115,16 @@
                         </a>
                         <a v-if="profile.role === 'ADMIN'" href="/admin.html" class="hover:bg-white/5 text-gray-400 hover:text-gray-200 border border-transparent w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition duration-200 text-xs font-semibold">
                             <i class="fa-solid fa-shield-halved text-sm"></i> Administration
+                        </a>
+                        <div class="border-t border-white/5 my-1.5" v-if="branding.discordLink || branding.forumLink || branding.documentationLink"></div>
+                        <a v-if="branding.discordLink" :href="branding.discordLink" target="_blank" class="hover:bg-white/5 text-gray-400 hover:text-gray-200 border border-transparent w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition duration-200 text-xs font-semibold">
+                            <i class="fa-brands fa-discord text-sm"></i> Discord
+                        </a>
+                        <a v-if="branding.forumLink" :href="branding.forumLink" target="_blank" class="hover:bg-white/5 text-gray-400 hover:text-gray-200 border border-transparent w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition duration-200 text-xs font-semibold">
+                            <i class="fa-solid fa-comments text-sm"></i> Forums
+                        </a>
+                        <a v-if="branding.documentationLink" :href="branding.documentationLink" target="_blank" class="hover:bg-white/5 text-gray-400 hover:text-gray-200 border border-transparent w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition duration-200 text-xs font-semibold">
+                            <i class="fa-solid fa-book text-sm"></i> Documentation
                         </a>
                         <div class="border-t border-white/5 my-1.5"></div>
                         <button @click="handleLogout" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-red-950/20 text-red-400 hover:text-red-300 transition duration-200 text-xs font-semibold border border-transparent hover:border-red-950/40">
@@ -321,6 +331,13 @@
                     totpEnabled: false
                 });
 
+                const branding = ref({
+                    serverName: '',
+                    discordLink: '',
+                    documentationLink: '',
+                    forumLink: ''
+                });
+
                 const mails = ref([]); // populated to keep badge count in nav dropdown correct
                 const apiTokens = ref([]);
                 const newTokenName = ref('');
@@ -374,6 +391,9 @@
                         const data = await response.json();
                         profile.value = data.profile;
                         mails.value = data.mails;
+                        if (data.branding) {
+                            branding.value = data.branding;
+                        }
                         await fetchApiTokens();
                     } catch (e) {
                         console.error('Failed to fetch data', e);
@@ -633,6 +653,7 @@
 
                 return {
                     profile,
+                    branding,
                     mails,
                     apiTokens,
                     newTokenName,
