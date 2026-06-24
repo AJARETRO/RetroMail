@@ -26,7 +26,7 @@ By submitting any pull requests, code contributions, or bug fixes to the public 
 
 ## 4. Commercial Requests & Permissions
 If you wish to obtain a commercial license, request redistribution rights, or integrate this software into a monetized network, please contact the Author directly at:
-👉 **Email:** admin@ajaretro.dev  
+👉 **Email:** niloyahmed2484@gmail.com  
 👉 **Modrinth Profile:** [AJA_R3TR0](https://modrinth.com/user/AJA_R3TR0)
 
 ## 5. Disclaimer of Warranty
