@@ -164,6 +164,50 @@ Setting up Brevo to work as your SMTP relay is straightforward. Follow these ste
      ```
 5. **Restart Server:** Restart the server or proxy. RetroMail will now use Brevo to securely send HTML newsletters and verification codes!
 
+### 4. Cloudflare DNS Setup for Brevo (Prevent Spam Folders)
+
+To ensure that the emails sent by RetroMail via Brevo do not land in your players' spam folders, you must authenticate your sending domain. This is done by adding SPF, DKIM, and DMARC records to your Cloudflare DNS settings.
+
+Follow these step-by-step instructions to configure your records:
+
+#### Step A: Access Cloudflare DNS Settings
+1. Log in to your [Cloudflare Dashboard](https://dash.cloudflare.com/).
+2. Select your domain from the list.
+3. Click on the **DNS** option in the left-hand sidebar, then click on **Records**.
+
+#### Step B: Add the SPF Record
+SPF (Sender Policy Framework) defines which servers are authorized to send mail on behalf of your domain.
+* **Type:** `TXT`
+* **Name (Host):** `@` (representing your root domain)
+* **TTL:** `Auto`
+* **Content (Value):** `v=spf1 include:spf.sendinblue.com ~all`
+
+*Note: If your domain already has an existing SPF record (a TXT record beginning with `v=spf1`), do not create a duplicate record. Instead, edit your existing record to merge the Brevo include block. For example, if your current record is `v=spf1 include:_spf.google.com ~all`, update it to: `v=spf1 include:_spf.google.com include:spf.sendinblue.com ~all`.*
+
+#### Step C: Add the DKIM Record
+DKIM (DomainKeys Identified Mail) cryptographically signs outbound emails to verify they were sent by your domain and were not tampered with during transit.
+1. Log in to your Brevo account, go to the top-right menu, select **Senders & IPs**, and click on **Domains**.
+2. Click **Configure** next to your domain. Under the DKIM section, Brevo will provide a host/name (usually `mail._domainkey`) and a long key value starting with `v=DKIM1; k=rsa; p=...`.
+3. In Cloudflare DNS, add a new record:
+   * **Type:** `TXT`
+   * **Name (Host):** `mail._domainkey` (or whatever selector Brevo specifies)
+   * **TTL:** `Auto`
+   * **Content (Value):** *(Paste the exact long key value provided by Brevo)*
+
+#### Step D: Add the DMARC Record
+DMARC (Domain-based Message Authentication, Reporting, and Conformance) provides instructions to receiving mail servers on how to handle emails that fail SPF or DKIM checks. Having a DMARC record is highly recommended by email clients like Gmail and Yahoo to prevent your emails from being flagged as spam.
+1. In Cloudflare DNS, add a new record:
+   * **Type:** `TXT`
+   * **Name (Host):** `_dmarc`
+   * **TTL:** `Auto`
+   * **Content (Value):** `v=DMARC1; p=none; rua=mailto:dmarc-reports@yourdomain.com`
+2. Replace `dmarc-reports@yourdomain.com` with a valid email address on your domain where you want to receive deliverability reports, or simply omit the reporting block and use `v=DMARC1; p=none` if you do not want to receive reports.
+
+#### Step E: Add MX Records
+MX (Mail Exchange) records specify the mail servers responsible for receiving email on behalf of your domain. Having valid MX records configured is crucial for overall domain reputation and ensures you can receive replies to your server emails.
+1. If you are using Brevo to receive incoming emails, add the MX records displayed in your Brevo domain configuration page.
+2. If you use another mail provider (like Google Workspace or Outlook) for receiving emails, ensure those MX records are set up in your Cloudflare DNS settings.
+
 ---
 
 ## 🎮 Commands & Permissions
