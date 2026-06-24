@@ -120,6 +120,34 @@ mail-handler:
     poll-interval-seconds: 30
 ```
 
+### 3. Brevo (Sendinblue) SMTP Setup Guide
+Setting up Brevo to work as your SMTP relay is straightforward. Follow these steps:
+
+1. **Create a Free Account:** Sign up at [Brevo.com](https://www.brevo.com/) (the free plan includes 300 free emails per day).
+2. **Add & Verify Your Sender Domain:**
+   * Go to **Senders & IP** in the top-right account dropdown.
+   * Click **Domains** -> **Add a Domain**.
+   * Enter your server domain (e.g. `yourdomain.com`) and add the generated DNS TXT records to your domain provider (Cloudflare, GoDaddy, etc.) to verify ownership and secure email deliverability (DKIM/SPF).
+3. **Get Your SMTP Credentials:**
+   * In the top-right account menu, click **SMTP & API**.
+   * Go to the **SMTP** tab.
+   * You will see your SMTP Host (`smtp-relay.brevo.com`) and Port (`587`).
+   * Click **Generate a new SMTP key** (Master password) and copy the generated key string.
+4. **Update config.yml:**
+   * Insert these credentials into your `plugins/RetroMail/config.yml` configuration:
+     ```yaml
+     smtp:
+       host: 'smtp-relay.brevo.com'
+       port: 587
+       username: 'your-brevo-account-email@domain.com' # Your Brevo account email
+       password: 'your-generated-smtp-master-key'      # The key you copied in Step 3
+       ssl: false
+       starttls: true
+       from-address: 'newsletter@yourdomain.com'       # Must match your verified sender domain!
+       from-name: 'Your Server Name'
+     ```
+5. **Restart Server:** Restart the server or proxy. RetroMail will now use Brevo to securely send HTML newsletters and verification codes!
+
 ---
 
 ## 🎮 Commands & Permissions
