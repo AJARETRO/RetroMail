@@ -1,6 +1,6 @@
 # ⚖️ RetroMail Software License Agreement
 
-**Version 1.0.0**  
+**Version 1.0.1**  
 **Effective Date:** June 24, 2026  
 **Copyright (c) 2026 AJA_RETRO (the "Author"). All Rights Reserved.**
 
@@ -17,17 +17,22 @@ Subject to the terms and conditions of this Agreement, the Author hereby grants 
 
 ## 2. Strict Restrictions
 Any rights not explicitly granted in Section 1 are strictly reserved by the Author. Specifically:
-* **No Redistribution:** You **may not** redistribute, publish, host, share, bundle, or sub-license this software, its source code, or its binary distributions (`.jar` files) to any third party, **whether in modified or unmodified form**.
-* **No Commercial Use:** You **may not** use this software, its source code, or any modified versions thereof in commercial projects, monetized server networks, or profit-earning environments without obtaining explicit, written prior permission from the Author.
-* **Preservation of Notices:** You must preserve all original copyright notices, branding lines ("Mail System by AJA_RETRO"), and author attributions in all copies or modifications of the software.
+* **No Redistribution:** You **may not** redistribute, publish, host, share, bundle, or sub-license this software, its source code, its binary distributions (`.jar` files), or any portion thereof to any third party, **whether in modified, unmodified, rebranded, or renamed form**.
+* **No Commercial or Monetized Use:** You **may not** use this software, its source code, or any modified versions or derivatives thereof in commercial projects, monetized server networks (including servers with in-game webstores, rank sales, or monetization elements), or any profit-earning environments without obtaining explicit, written prior permission from the Author.
+* **No Service Provision:** You **may not** host or provide this software, its web dashboard, or its API as a commercial service, Software-as-a-Service (SaaS), or cloud-based platform for third parties.
+* **Preservation of Notices:** You must preserve all original copyright notices, branding lines ("Mail System by AJA_RETRO"), and author attributions in all copies, modifications, or derivatives of the software.
 
 ## 3. Contributions
-By submitting any pull requests, code contributions, or bug fixes to the public repository of this software, you agree to grant the Author a perpetual, irrevocable, worldwide, royalty-free license to use, modify, merge, and distribute your contributions under these same terms.
+By submitting any pull requests, code contributions, suggestions, or bug fixes to the public repository of this software, you agree to grant the Author a perpetual, irrevocable, worldwide, royalty-free, sub-licensable license to use, modify, merge, adapt, and distribute your contributions under these same terms or any future license terms chosen by the Author.
 
-## 4. Commercial Requests & Permissions
+## 4. Legal Provisions & Enforcement
+* **Severability:** If any provision of this Agreement is held by a court of competent jurisdiction to be invalid or unenforceable, the remaining provisions of this Agreement shall remain in full force and effect.
+* **No Waiver:** The failure of the Author to enforce any provision of this Agreement or to act upon any violation shall not constitute a waiver of the Author's rights to enforce such provisions or act upon subsequent violations at any time.
+
+## 5. Commercial Requests & Permissions
 If you wish to obtain a commercial license, request redistribution rights, or integrate this software into a monetized network, please contact the Author directly at:
 👉 **Email:** niloyahmed2484@gmail.com  
 👉 **Modrinth Profile:** [AJA_R3TR0](https://modrinth.com/user/AJA_R3TR0)
 
-## 5. Disclaimer of Warranty
+## 6. Disclaimer of Warranty
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
