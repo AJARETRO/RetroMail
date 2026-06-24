@@ -1,6 +1,7 @@
 package dev.retro.papersmtp.listeners;
 
 import dev.retro.papersmtp.PaperSMTP;
+import dev.retro.papersmtp.UpdateChecker;
 import dev.retro.papersmtp.compatibility.CompatibilityUtil;
 import dev.retro.papersmtp.database.SubscriptionState;
 import dev.retro.papersmtp.gui.EmailGUIHolder;
@@ -35,6 +36,14 @@ public class PlayerListener implements Listener {
                 plugin.requestPendingCommands(player.getUniqueId());
             }
         }, 30L);
+
+        // Notify OP players of updates
+        if (player.isOp() && plugin.getUpdateChecker() != null && plugin.getUpdateChecker().isUpdateAvailable()) {
+            player.sendMessage("§c§l[RetroMail] §aA new update is available! Current: §7" + 
+                               plugin.getDescription().getVersion() + " §aLatest: §e" + 
+                               plugin.getUpdateChecker().getLatestVersion());
+            player.sendMessage("§aDownload it from: §bhttps://github.com/AJARETRO/RetroMail/releases");
+        }
     }
 
     @EventHandler

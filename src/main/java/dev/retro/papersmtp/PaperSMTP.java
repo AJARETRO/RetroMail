@@ -30,6 +30,7 @@ public class PaperSMTP extends JavaPlugin implements PluginMessageListener, Mail
     private EmailGUI emailGUI;
     private IMAPListener imapListener;
     private MailHandlerServer mailHandlerServer;
+    private UpdateChecker updateChecker;
 
     private final ConcurrentHashMap<UUID, Boolean> pendingEmailInputs = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Boolean> pendingCodeInputs = new ConcurrentHashMap<>();
@@ -92,6 +93,29 @@ public class PaperSMTP extends JavaPlugin implements PluginMessageListener, Mail
         // Register custom sync queue messaging channels
         getServer().getMessenger().registerOutgoingPluginChannel(this, "papersmtp:queue");
         getServer().getMessenger().registerIncomingPluginChannel(this, "papersmtp:queue", this);
+
+        // Setup bStats
+        try {
+            int pluginId = 31421;
+            new org.bstats.bukkit.Metrics(this, pluginId);
+            getLogger().info("bStats metrics initialized successfully for ID 31421.");
+        } catch (Exception e) {
+            getLogger().warning("Failed to initialize bStats: " + e.getMessage());
+        }
+
+        // Setup Update Checker
+        updateChecker = new UpdateChecker(getDescription().getVersion());
+        getServer().getScheduler().runTaskAsynchronously(this, () -> {
+            updateChecker.checkForUpdates();
+            if (updateChecker.isUpdateAvailable()) {
+                getLogger().warning("====================================================");
+                getLogger().warning("A new update for RetroMail is available!");
+                getLogger().warning("Current version: " + getDescription().getVersion());
+                getLogger().warning("Latest version: " + updateChecker.getLatestVersion());
+                getLogger().warning("Download it here: https://github.com/AJARETRO/RetroMail/releases");
+                getLogger().warning("====================================================");
+            }
+        });
 
         getLogger().info("=============================================");
         getLogger().info("RetroMail has been successfully enabled!");
@@ -334,6 +358,10 @@ public class PaperSMTP extends JavaPlugin implements PluginMessageListener, Mail
 
     public ConcurrentHashMap<UUID, Long> getEmailCooldowns() {
         return emailCooldowns;
+    }
+
+    public UpdateChecker getUpdateChecker() {
+        return updateChecker;
     }
 
     @Override
