@@ -181,7 +181,10 @@ public class SMTPManager {
 
         try {
             MimeMessage msg = new MimeMessage(session);
-            msg.setFrom(new InternetAddress(fromEmail, fromName));
+            msg.setFrom(new InternetAddress(config.smtpFromAddress, fromName));
+            if (fromEmail != null && !fromEmail.equalsIgnoreCase(config.smtpFromAddress)) {
+                msg.setReplyTo(new javax.mail.Address[] { new InternetAddress(fromEmail, fromName) });
+            }
             msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail, false));
             msg.setSubject(subject, "UTF-8");
             

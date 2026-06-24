@@ -223,6 +223,12 @@ MX (Mail Exchange) records specify the mail servers responsible for receiving em
   * Permission: `smtp.admin.massmail` *(default: op)*
   * Example: `/mass-email welcome.html Welcome to Retro Network!`
 
+* **Console-Only Command: `email create-staff <username> <email> <role>`**
+  * Description: Registers a new staff account on the shared database and sends an automated welcome email with credentials.
+  * Execute Location: Run directly from any backend Spigot/Paper server console (not game chat).
+  * Valid Roles: `ADMIN` or `STAFF`.
+  * Note: The email is sent from the verified SMTP relay address so that it delivers directly to the staff member's inbox safely.
+
 ---
 
 ## 💻 Web Dashboard Customization
