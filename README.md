@@ -1,36 +1,56 @@
-# RetroMail (PaperSMTP)
-
-RetroMail is a powerful, enterprise-grade Minecraft plugin and proxy extension that integrates **in-game SMTP newsletter subscriptions and verification** with a **rich, responsive web dashboard** and a **secure external API**. It supports multi-server BungeeCord and Velocity proxy architectures, automated email delivery, in-game rewards, and granular security controls.
-
----
-
-## Table of Contents
-1. [Key Features](#1-key-features)
-2. [Architecture Overview](#2-architecture-overview)
-3. [Setup & Installation](#3-setup--installation)
-4. [In-Game Commands & Permissions](#4-in-game-commands--permissions)
-5. [SMTP & IMAP Mail Configuration](#5-smtp--imap-mail-configuration)
-6. [Web Dashboard Usage](#6-web-dashboard-usage)
-7. [Creating Custom HTML Mail Templates](#7-creating-custom-html-mail-templates)
-8. [Creating Custom Web Dashboard Pages](#8-creating-custom-web-dashboard-pages)
-9. [External API Documentation](#9-external-api-documentation)
+<div align="center">
+  <img src="https://raw.githubusercontent.com/AJARETRO/RetroMail/main/IMG_20260624_115350.png" width="180" height="180" alt="RetroMail Logo" style="border-radius: 24px; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);" />
+  
+  # 📬 RetroMail (PaperSMTP)
+  
+  [![Modrinth Download](https://img.shields.io/badge/Modrinth-Download-00AD5C?style=for-the-badge&logo=modrinth)](https://modrinth.com/plugin/retromail)
+  [![GitHub Releases](https://img.shields.io/badge/GitHub-Releases-222222?style=for-the-badge&logo=github)](https://github.com/AJARETRO/RetroMail/releases)
+  [![Platform Support](https://img.shields.io/badge/Platforms-Paper%20%7C%20Spigot%20%7C%20Velocity%20%7C%20Bungee-007ACC?style=for-the-badge&logo=minecraft)](https://modrinth.com/plugin/retromail)
+  [![bStats Metrics](https://img.shields.io/badge/bStats-ID%2031421-orange?style=for-the-badge&logo=chartmogul)](https://bstats.org/plugin/bukkit/RetroMail/31421)
+  
+  **The ultimate enterprise-grade Minecraft plugin for SMTP verification rewards, multi-server newsletter dispatches, responsive staff mail dashboard, and secure tokenized API integration.**
+</div>
 
 ---
 
-## 1. Key Features
-* **In-Game Verification:** Players verify their real-life emails in-game using custom GUI menus, receiving configured rewards (items, XP, commands) instantly.
-* **Responsive HTML Newsletters:** Dispatch news, announcements, and maintenance alerts using beautifully styled HTML email templates.
-* **Proxy-Hosted Web Dashboard:** Staff members access a centralized web inbox on the proxy to view, read, and search emails, send outbound messages, manage avatars, and configure two-factor authentication (2FA).
-* **Granular Security Controls:** 
-  * Admins cannot self-modify roles, update their own permissions, or self-delete.
-  * Confirmation modals guard all critical actions (creating/deleting API keys, modifying staff permissions, deleting accounts).
-* **API Access Tokens:** Generate API tokens with specific permission scopes (`read_mails`, `send_mails`) to integrate with external CI/CD systems or Discord bots.
+> [!IMPORTANT]
+> **Looking to download the plugin?**
+> Please obtain the official compiled `.jar` releases directly from our **[Modrinth Page](https://modrinth.com/plugin/retromail)**. We support Paper, Spigot, Folia, Velocity, and BungeeCord proxy networks out of the box.
 
 ---
 
-## 2. Architecture Overview
+## 🌟 Why Choose RetroMail?
 
-RetroMail is designed to run efficiently in both single-server and multi-server environments:
+Maintaining player engagement and real-life connections has never been easier. RetroMail bridges the gap between your Minecraft server and real-life email clients, providing a secure, automated link.
+
+* **🚀 Drive Player Registrations:** Reward players with items, XP, or custom commands for verifying their email address in-game.
+* **📢 Multi-Server Newsletters:** Send beautiful, responsive HTML announcements and maintenance logs to all subscribed players simultaneously.
+* **💻 Self-Hosted Staff Inbox:** Proxy server starts an isolated web dashboard allowing your admins to manage mail, read replies, and create API tokens.
+* **🔒 Enterprise Security Hardening:** Strict API key token scopes, mandatory confirmation modals, and admin self-modify protection (no self-deletions or role modifications).
+
+---
+
+## 💡 Typical Use Cases
+
+* **Email Verification Rewards:** Let players run `/email` in-game, input their email, and receive a verification code. Upon successful verification, reward them with key items, money, or custom rank commands.
+* **Newsletter Subscriptions:** Build a mailing list of your player base to dispatch server updates, store sales, and event announcements directly to their real-life mailboxes.
+* **Support Ticketing Sync:** Read email replies from players directly in the proxy web dashboard, forming centralized thread histories.
+* **External Integrations:** Automate announcements or check subscriber status from external Discord bots or website panels using secure, scoped API keys.
+
+---
+
+## ⚙️ Technical Specifications & Architecture
+
+RetroMail is designed to scale with large networks. It utilizes a shared database (MySQL/MariaDB) to synchronize email verification records across all sub-servers, while the proxy host executes the web application server.
+
+| Aspect | Specification |
+| :--- | :--- |
+| **Supported Loaders** | Paper, Spigot, Folia, Velocity, BungeeCord |
+| **Compatibility Target** | Minecraft 1.20 through 1.21 |
+| **Java Requirements** | Java 8 minimum, Java 17+ recommended |
+| **Database Engines** | MySQL, MariaDB, SQLite |
+| **Relay Protocols** | SMTP (Relay) and IMAP (Catch-All Reply Listener) |
+| **Statistics Tracking** | Integrated via bStats (ID `31421`) |
 
 ```
                   ┌──────────────────────────────┐
@@ -57,42 +77,15 @@ RetroMail is designed to run efficiently in both single-server and multi-server 
 
 ---
 
-## 3. Setup & Installation
+## 🔧 Setup & Configuration
 
-### A. Prerequisites
-* **Minecraft Version:** 1.20.x or higher
-* **Java Version:** Java 8 minimum, Java 17+ recommended.
-* **Database:** MariaDB / MySQL (mandatory for multi-server synchronization) or SQLite (for single-server mode).
+### 1. Installation
+1. Download `papersmtp-1.0.1.jar` from **[Modrinth](https://modrinth.com/plugin/retromail)**.
+2. Put the jar file into the `plugins/` directory of your Velocity/Bungee proxy and backend Minecraft servers.
+3. Start the servers to generate default files, then stop them.
 
-### B. Installation Steps
-1. Download the latest `RetroMail.jar` from the [Releases](https://github.com/AJARETRO/RetroMail/releases) page.
-2. Place the jar in the `plugins/` directory of your Proxy server (Velocity/Bungee) and each backend Spigot/Paper/Folia server.
-3. Start the servers to generate default configuration files, then stop them.
-4. Configure the database connection parameters in `plugins/RetroMail/config.yml` on each server. Ensure they all point to the same database for synchronization.
-5. In the Proxy server config, set `mail-handler.enabled: true` and define your web port (e.g., `8080`).
-6. On backend Minecraft servers, set `mail-handler.enabled: false` to prevent port conflicts.
-7. Start all servers.
-
----
-
-## 4. In-Game Commands & Permissions
-
-### A. General Commands
-* **/email**
-  * Opens the email subscription and verification GUI.
-  * *Permission:* `smtp.user.use` (default: true)
-
-### B. Admin Commands
-* **/mass-email <template.html> [subject...]**
-  * Sends a mass newsletter template to all verified subscribers in the database.
-  * *Permission:* `smtp.admin.massmail` (default: op)
-  * *Example:* `/mass-email new_season.html Season 15 Launch Announcement!`
-
----
-
-## 5. SMTP & IMAP Mail Configuration
-
-Edit the `config.yml` file to configure your mail relay and incoming reader:
+### 2. Configure Database & Mail Client
+Edit `plugins/RetroMail/config.yml` on each server:
 
 ```yaml
 database:
@@ -115,8 +108,8 @@ smtp:
   from-name: 'Retro Server'
 
 mail-handler:
-  enabled: true
-  port: 8080
+  enabled: true   # Keep TRUE on Proxy server, set to FALSE on backend servers to avoid port collision
+  port: 8080      # The web dashboard dashboard port
   domain: "yourdomain.com"
   imap:
     host: "imap.gmail.com"
@@ -129,124 +122,88 @@ mail-handler:
 
 ---
 
-## 6. Web Dashboard Usage
+## 🎮 Commands & Permissions
 
-Access the web interface at `http://your-proxy-ip:port/` (e.g. `http://localhost:8080`).
+### Player Commands
+* **/email**
+  * Description: Opens the verification GUI or verifies a code.
+  * Permission: `smtp.user.use` *(default: true)*
 
-### A. Pages
-1. **Login Page (`index.html`):** Staff login utilizing secure hashed credentials. Supports Two-Factor Authentication checks.
-2. **Inbox View (`inbox.html`):** Reads caught-reply emails and tracks threads. Contains a navigation bar for composing new outbound emails.
-3. **Settings (`settings.html`):**
-   * Change passwords or upload custom avatars.
-   * Enable 2FA by scanning a generated TOTP QR code.
-   * Create and delete API access tokens with specific scopes (`Read Emails`, `Send Emails`).
-4. **Administration Panel (`admin.html`):**
-   * Only accessible to accounts with the `ADMIN` role.
-   * Allows managing staff permissions, restricting access to specific shared mailboxes (e.g., `support@domain.com`), configuring sender restrictions, and deleting staff accounts.
+### Staff Administration
+* **/mass-email <template.html> [subject...]**
+  * Description: Sends a beautifully styled HTML newsletter to all verified users.
+  * Permission: `smtp.admin.massmail` *(default: op)*
+  * Example: `/mass-email welcome.html Welcome to Retro Network!`
 
 ---
 
-## 7. Creating Custom HTML Mail Templates
+## 💻 Web Dashboard Customization
 
-All email templates are stored as static `.html` files in the `plugins/RetroMail/` directory.
+Dashboard template files extract automatically to `plugins/retromail/web/` on the proxy server.
 
-### Placeholders
-You can use the following default placeholders inside your templates:
-* `{player}`: Inserts the player's in-game name.
-* `{code}`: Inserts the temporary 6-digit verification code.
+### Adding Custom HTML Pages
+1. Save your custom page (e.g. `guide.html`) in `plugins/retromail/web/`.
+2. The proxy web server will host it immediately at `http://your-proxy-ip:port/guide.html`.
 
-### Example Template (Verification Email)
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; color: #333; }
-        .container { padding: 20px; background-color: #fff; border-radius: 8px; }
-        .code { font-size: 24px; font-weight: bold; color: #dc2626; letter-spacing: 2px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Hey {player}!</h2>
-        <p>Your verification code for Retro Network is:</p>
-        <p class="code">{code}</p>
-        <p>Enter this code in-game using <b>/email</b> to complete your registration.</p>
-    </div>
-</body>
-</html>
-```
-
----
-
-## 8. Creating Custom Web Dashboard Pages
-
-Static dashboard pages are located inside the plugin jar in `src/main/resources/web/`, which extract to your proxy directory under `plugins/retromail/web/`.
-
-### Host a New Page
-1. Place a new `.html` file (e.g. `custom.html`) inside the `plugins/retromail/web/` folder.
-2. The proxy will automatically route and host it at `http://your-proxy-ip:port/custom.html`.
-
-### Interact with the Backend API (JavaScript)
-All API calls must contain the authentication token stored in `localStorage` (`retromail_token`):
+### JavaScript API Integrations
+Always retrieve and supply the stored JWT bearer token in request headers:
 
 ```javascript
 const token = localStorage.getItem('retromail_token');
 
-// Fetch dashboard data
 fetch('/api/dashboard', {
     headers: { 'Authorization': 'Bearer ' + token }
 })
 .then(response => response.json())
 .then(data => {
-    console.log('Profile:', data.profile);
-    console.log('Mails:', data.mails);
+    console.log('Active Mailboxes:', data.mails);
 });
 ```
 
 ---
 
-## 9. External API Documentation
+## 🔗 External REST API & Access Tokens
 
-RetroMail provides developer-friendly external API endpoints to query or dispatch emails using generated access tokens.
+Create tokens via the Web Dashboard Settings page to integrate RetroMail with external scripts or systems.
 
-### Authentication
-Include one of the following headers in your HTTP request:
-* `Authorization: Bearer <your_api_token>`
-* `X-API-Key: <your_api_token>`
+### Authentication Headers
+Supply one of the following in your HTTP requests:
+* `Authorization: Bearer <token>`
+* `X-API-Key: <token>`
 
-### A. Fetch Staff Mailbox Inbox
+### Endpoints
+
+#### Get Inbox Messages
 * **Endpoint:** `GET /api/external/mails`
 * **Required Scope:** `read_mails`
-* **Response Status:** `200 OK`
 * **Response Body Example:**
 ```json
 [
   {
-    "id": 41,
-    "mailFrom": "client@gmail.com",
+    "id": 12,
+    "mailFrom": "player@gmail.com",
     "mailTo": "support@yourdomain.com",
-    "subject": "Question about ranks",
-    "body": "Hello, how do I purchase a rank?",
+    "subject": "Help with rewards",
+    "body": "Hi, I didn't get my verification items.",
     "isHtml": false,
-    "receivedAt": "2026-06-24 04:12:00"
+    "receivedAt": "2026-06-24 05:44:00"
   }
 ]
 ```
 
-### B. Send Outbound Email
+#### Send Outbound Email
 * **Endpoint:** `POST /api/external/send`
 * **Required Scope:** `send_mails`
 * **Request Body Example:**
 ```json
 {
-  "to": "client@gmail.com",
-  "subject": "Rank Purchase Help",
-  "body": "<p>You can purchase ranks at our store!</p>",
+  "to": "player@gmail.com",
+  "subject": "Support Ticket Reply",
+  "body": "<h1>Support Response</h1><p>We have credited the items to your inventory.</p>",
   "isHtml": true
 }
 ```
-* **Response Body Example:**
+* **Response Body:**
 ```json
 {
   "status": "success",
