@@ -19,6 +19,15 @@
 
 ---
 
+> [!TIP]
+> ### 🚀 Recommended Minecraft Host — UltraServers
+> Looking for a high-performance, lag-free server to run your Minecraft network and RetroMail dashboard? We are proudly affiliated with **UltraServers**!
+> 
+> Get enterprise-grade hosting with ultra-fast NVMe storage, dedicated CPUs, custom control panels, and 24/7 support.
+> 👉 **[Deploy your high-performance server on UltraServers now!](https://ultraservers.com/aff.php?code=7013x7afNvlfx2p5)**
+
+---
+
 ## 🌟 Why Choose RetroMail?
 
 Maintaining player engagement and real-life connections has never been easier. RetroMail bridges the gap between your Minecraft server and real-life email clients, providing a secure, automated link.
