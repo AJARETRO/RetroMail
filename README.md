@@ -313,3 +313,18 @@ RetroMail collects anonymous usage statistics and checks for updates. You can op
 
 * **bStats Metrics:** Tracks anonymous data (e.g. server software, player count, Java version, country). This helps us monitor plugin adoption. You can disable this by setting `enabled: false` in your server's `plugins/bStats/config.yml`.
 * **Update Checker:** Automatically queries the GitHub Releases API at server startup to check for the latest versions. No personal or server identification data is sent.
+
+---
+
+## 🏷️ Release History
+
+### v1.0.3 - Bonefire (Current)
+* **API Hardening:** Injected strict length limits and character format enforcements across all REST endpoints to protect against malformed data and ensure robust operation.
+* **Directory Traversal Protection:** Hardened the `/email test` console subcommand from path traversal inputs using folder safety blocks.
+* **Client-Side Form Constraints:** Synchronized HTML element inputs (`maxlength`, `minlength`, `pattern`) in all web forms (`index.html`, `inbox.html`, `settings.html`, `admin.html`) to reject invalid inputs early.
+* **UI Polish:** Integrated glowing glassmorphic components, responsive form invalid highlights, smooth active transitions, and sleek styling.
+
+### v1.0.2 - BloodBath
+* **Dynamic Branding:** Introduced customizable dashboard settings for branding properties (server name, Discord link, wiki, and forums) without hardcoding HTML.
+* **Folia Off-Thread Compliance:** Offloaded all synchronous SQL preference/subscription updates from the Minecraft main/region thread.
+* **Outbound Mail logs:** Integrated logging details for outbound SMTP verification dispatches directly inside console warnings and staff dashboards.
