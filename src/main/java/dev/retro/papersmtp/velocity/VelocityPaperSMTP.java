@@ -19,10 +19,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 
-@Plugin(id = "retromail", name = "RetroMail", version = "1.0.2", description = "Allows players to subscribe to real-life newsletters and receive offline mail notifications via SMTP.", authors = {"Retro"})
+@Plugin(id = "retromail", name = "RetroMail", version = "1.0.3", description = "Allows players to subscribe to real-life newsletters and receive offline mail notifications via SMTP.", authors = {"Retro"})
 public class VelocityPaperSMTP implements MailPluginInterface {
     public static final MinecraftChannelIdentifier IDENTIFIER = MinecraftChannelIdentifier.from("papersmtp:queue");
 
@@ -87,6 +88,9 @@ public class VelocityPaperSMTP implements MailPluginInterface {
         }
         if (imapListener != null) {
             imapListener.stop();
+        }
+        if (smtpManager != null) {
+            smtpManager.shutdown();
         }
         if (queueDatabaseManager != null) {
             queueDatabaseManager.close();
@@ -180,4 +184,45 @@ public class VelocityPaperSMTP implements MailPluginInterface {
     public VelocityDatabaseManager getQueueDatabaseManager() {
         return queueDatabaseManager;
     }
+
+    @Override
+    public void triggerVerificationRewards(UUID uuid) {
+        List<String> commands = getPluginConfig().rewardCommands;
+        if (getPluginConfig().rewardsEnabled && !commands.isEmpty()) {
+            for (com.velocitypowered.api.proxy.server.RegisteredServer s : server.getAllServers()) {
+                String serverName = s.getServerInfo().getName();
+                for (String cmd : commands) {
+                    getQueueDatabaseManager().addCommand(uuid, serverName, cmd);
+                }
+            }
+            server.getPlayer(uuid).ifPresent(p -> {
+                triggerVelocityCommandPush(p);
+            });
+        }
+    }
+
+    private void triggerVelocityCommandPush(com.velocitypowered.api.proxy.Player player) {
+        com.velocitypowered.api.proxy.ServerConnection serverConn = player.getCurrentServer().orElse(null);
+        if (serverConn == null) return;
+        String serverName = serverConn.getServerInfo().getName();
+        List<dev.retro.papersmtp.velocity.VelocityDatabaseManager.QueuedCommand> pending = getQueueDatabaseManager().getPendingCommands(player.getUniqueId(), serverName);
+        if (pending.isEmpty()) return;
+
+        try {
+            java.io.ByteArrayOutputStream stream = new java.io.ByteArrayOutputStream();
+            java.io.DataOutputStream out = new java.io.DataOutputStream(stream);
+            out.writeUTF("execute");
+            out.writeUTF(player.getUniqueId().toString());
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < pending.size(); i++) {
+                sb.append(pending.get(i).id).append(":").append(pending.get(i).command);
+                if (i < pending.size() - 1) sb.append("\n");
+            }
+            out.writeUTF(sb.toString());
+            serverConn.sendPluginMessage(IDENTIFIER, stream.toByteArray());
+        } catch (Exception e) {
+            jdkLogger.log(Level.SEVERE, "Failed to push commands to " + serverName + ": " + e.getMessage());
+        }
+    }
 }
+

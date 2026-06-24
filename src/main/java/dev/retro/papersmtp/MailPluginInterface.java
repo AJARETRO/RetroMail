@@ -17,4 +17,6 @@ public interface MailPluginInterface {
     void saveResource(String resourcePath, boolean replace);
     InputStream getResource(String filename);
     String getPlayerName(UUID uuid);
+    void triggerVerificationRewards(UUID uuid);
 }
+

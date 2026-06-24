@@ -156,9 +156,33 @@ public class DatabaseManager {
                 statement.execute(mailsTable);
                 statement.execute(tokensTable);
                 statement.execute(sessionsTable);
-                // Run migration to add permissions column if it does not exist
+
+                String outboundQueueTable = "CREATE TABLE IF NOT EXISTS papersmtp_outbound_queue (" +
+                        "id " + autoIncrement + ", " +
+                        "mail_from VARCHAR(255) NOT NULL, " +
+                        "from_name VARCHAR(255) NOT NULL, " +
+                        "mail_to VARCHAR(255) NOT NULL, " +
+                        "subject VARCHAR(255) NOT NULL, " +
+                        "body TEXT NOT NULL, " +
+                        "is_html TINYINT DEFAULT 0, " +
+                        "retries INTEGER DEFAULT 0, " +
+                        "next_retry_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                        "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                        ");";
+                statement.execute(outboundQueueTable);
+
+                // Run migration to add columns if they do not exist
                 try {
                     statement.execute("ALTER TABLE papersmtp_api_tokens ADD COLUMN permissions VARCHAR(255) DEFAULT 'read_mails,send_mails';");
+                } catch (Exception ignored) {}
+                try {
+                    statement.execute("ALTER TABLE papersmtp_subscriptions ADD COLUMN news_enabled TINYINT DEFAULT 1;");
+                } catch (Exception ignored) {}
+                try {
+                    statement.execute("ALTER TABLE papersmtp_subscriptions ADD COLUMN surveys_enabled TINYINT DEFAULT 1;");
+                } catch (Exception ignored) {}
+                try {
+                    statement.execute("ALTER TABLE papersmtp_subscriptions ADD COLUMN sales_enabled TINYINT DEFAULT 1;");
                 } catch (Exception ignored) {}
             }
         } catch (Exception e) {
@@ -273,13 +297,13 @@ public class DatabaseManager {
                 return executeGetState(uuid);
             } catch (SQLException ex) {
                 plugin.getLogger().log(Level.SEVERE, "Failed to query subscription state on retry: " + ex.getMessage(), ex);
-                return new SubscriptionState(SubscriptionState.Type.NONE, null, null);
+                return new SubscriptionState(SubscriptionState.Type.NONE, null, null, true, true, true);
             }
         }
     }
 
     private SubscriptionState executeGetState(UUID uuid) throws SQLException {
-        String query = "SELECT verified, email, verification_code FROM papersmtp_subscriptions WHERE uuid = ?;";
+        String query = "SELECT verified, email, verification_code, news_enabled, surveys_enabled, sales_enabled FROM papersmtp_subscriptions WHERE uuid = ?;";
         Connection conn = getConnection();
         try (PreparedStatement statement = conn.prepareStatement(query)) {
             statement.setString(1, uuid.toString());
@@ -288,15 +312,18 @@ public class DatabaseManager {
                     boolean verified = rs.getInt("verified") == 1;
                     String email = rs.getString("email");
                     String code = rs.getString("verification_code");
+                    boolean news = rs.getObject("news_enabled") == null || rs.getInt("news_enabled") == 1;
+                    boolean surveys = rs.getObject("surveys_enabled") == null || rs.getInt("surveys_enabled") == 1;
+                    boolean sales = rs.getObject("sales_enabled") == null || rs.getInt("sales_enabled") == 1;
                     if (verified) {
-                        return new SubscriptionState(SubscriptionState.Type.VERIFIED, email, null);
+                        return new SubscriptionState(SubscriptionState.Type.VERIFIED, email, null, news, surveys, sales);
                     } else {
-                        return new SubscriptionState(SubscriptionState.Type.PENDING, email, code);
+                        return new SubscriptionState(SubscriptionState.Type.PENDING, email, code, news, surveys, sales);
                     }
                 }
             }
         }
-        return new SubscriptionState(SubscriptionState.Type.NONE, null, null);
+        return new SubscriptionState(SubscriptionState.Type.NONE, null, null, true, true, true);
     }
 
     public synchronized List<String> getSubscribedEmails() {
@@ -1038,5 +1065,121 @@ public class DatabaseManager {
             return matcher.group();
         }
         return email.trim();
+    }
+
+    public synchronized void addOutboundMailToQueue(String fromEmail, String fromName, String toEmail, String subject, String body, int isHtml) {
+        String query = "INSERT INTO papersmtp_outbound_queue (mail_from, from_name, mail_to, subject, body, is_html, retries, next_retry_at) VALUES (?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP);";
+        try {
+            Connection conn = getConnection();
+            try (PreparedStatement statement = conn.prepareStatement(query)) {
+                statement.setString(1, fromEmail);
+                statement.setString(2, fromName);
+                statement.setString(3, toEmail);
+                statement.setString(4, subject);
+                statement.setString(5, body);
+                statement.setInt(6, isHtml);
+                statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to queue outbound email: " + e.getMessage(), e);
+        }
+    }
+
+    public static class OutboundMail {
+        public final int id;
+        public final String fromEmail;
+        public final String fromName;
+        public final String toEmail;
+        public final String subject;
+        public final String body;
+        public final boolean isHtml;
+        public final int retries;
+
+        public OutboundMail(int id, String fromEmail, String fromName, String toEmail, String subject, String body, boolean isHtml, int retries) {
+            this.id = id;
+            this.fromEmail = fromEmail;
+            this.fromName = fromName;
+            this.toEmail = toEmail;
+            this.subject = subject;
+            this.body = body;
+            this.isHtml = isHtml;
+            this.retries = retries;
+        }
+    }
+
+    public synchronized List<OutboundMail> getPendingOutboundMails() {
+        List<OutboundMail> list = new ArrayList<>();
+        String query = "SELECT id, mail_from, from_name, mail_to, subject, body, is_html, retries FROM papersmtp_outbound_queue WHERE next_retry_at <= CURRENT_TIMESTAMP AND retries < 5;";
+        try {
+            Connection conn = getConnection();
+            try (PreparedStatement statement = conn.prepareStatement(query);
+                 ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new OutboundMail(
+                            rs.getInt("id"),
+                            rs.getString("mail_from"),
+                            rs.getString("from_name"),
+                            rs.getString("mail_to"),
+                            rs.getString("subject"),
+                            rs.getString("body"),
+                            rs.getInt("is_html") == 1,
+                            rs.getInt("retries")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to query pending outbound emails: " + e.getMessage());
+        }
+        return list;
+    }
+
+    public synchronized void incrementMailRetry(int id, int delaySeconds) {
+        String updateQuery;
+        boolean isSqlite = plugin.getPluginConfig().dbType.equalsIgnoreCase("sqlite");
+        if (isSqlite) {
+            updateQuery = "UPDATE papersmtp_outbound_queue SET retries = retries + 1, next_retry_at = datetime('now', '+' || ? || ' seconds') WHERE id = ?;";
+        } else {
+            updateQuery = "UPDATE papersmtp_outbound_queue SET retries = retries + 1, next_retry_at = DATE_ADD(CURRENT_TIMESTAMP, INTERVAL ? SECOND) WHERE id = ?;";
+        }
+        try {
+            Connection conn = getConnection();
+            try (PreparedStatement statement = conn.prepareStatement(updateQuery)) {
+                statement.setInt(1, delaySeconds);
+                statement.setInt(2, id);
+                statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to increment mail retry: " + e.getMessage());
+        }
+    }
+
+    public synchronized void removeOutboundMail(int id) {
+        String query = "DELETE FROM papersmtp_outbound_queue WHERE id = ?;";
+        try {
+            Connection conn = getConnection();
+            try (PreparedStatement statement = conn.prepareStatement(query)) {
+                statement.setInt(1, id);
+                statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to delete outbound email from queue: " + e.getMessage());
+        }
+    }
+
+    public synchronized void setSubscriptionPreference(UUID uuid, String column, boolean enabled) {
+        if (!column.equalsIgnoreCase("news_enabled") && !column.equalsIgnoreCase("surveys_enabled") && !column.equalsIgnoreCase("sales_enabled")) {
+            return;
+        }
+        String query = "UPDATE papersmtp_subscriptions SET " + column + " = ? WHERE uuid = ?;";
+        try {
+            Connection conn = getConnection();
+            try (PreparedStatement statement = conn.prepareStatement(query)) {
+                statement.setInt(1, enabled ? 1 : 0);
+                statement.setString(2, uuid.toString());
+                statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to update subscription preference: " + e.getMessage());
+        }
     }
 }

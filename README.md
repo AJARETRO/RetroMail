@@ -89,7 +89,7 @@ RetroMail is designed to scale with large networks. It utilizes a shared databas
 ## 🔧 Setup & Configuration
 
 ### 1. Installation
-1. Download `papersmtp-1.0.2.jar` from **[Modrinth](https://modrinth.com/plugin/retromail)**.
+1. Download `papersmtp-1.0.3.jar` from **[Modrinth](https://modrinth.com/plugin/retromail)**.
 2. Put the jar file into the `plugins/` directory of your Velocity/Bungee proxy and backend Minecraft servers.
 3. Start the servers to generate default files, then stop them.
 

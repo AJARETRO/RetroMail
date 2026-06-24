@@ -2,6 +2,8 @@ package dev.retro.papersmtp.smtp;
 
 import dev.retro.papersmtp.MailPluginInterface;
 import dev.retro.papersmtp.config.PluginConfig;
+import dev.retro.papersmtp.database.DatabaseManager;
+import java.util.List;
 
 import javax.mail.Authenticator;
 import javax.mail.Message;
@@ -22,9 +24,55 @@ import java.util.logging.Level;
 
 public class SMTPManager {
     private final MailPluginInterface plugin;
+    private final java.util.concurrent.ScheduledExecutorService scheduler = java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "RetroMail-OutboundQueue");
+        t.setDaemon(true);
+        t.setPriority(Thread.MIN_PRIORITY);
+        return t;
+    });
+    private boolean isProcessing = false;
 
     public SMTPManager(MailPluginInterface plugin) {
         this.plugin = plugin;
+        startQueueProcessor();
+    }
+
+    public void startQueueProcessor() {
+        // Run retry processor every 60 seconds
+        scheduler.scheduleWithFixedDelay(this::processOutboundQueue, 15, 60, java.util.concurrent.TimeUnit.SECONDS);
+    }
+
+    public void shutdown() {
+        scheduler.shutdown();
+    }
+
+    public void processOutboundQueue() {
+        if (isProcessing) return;
+        isProcessing = true;
+        try {
+            List<DatabaseManager.OutboundMail> pending = plugin.getDatabaseManager().getPendingOutboundMails();
+            if (pending.isEmpty()) {
+                isProcessing = false;
+                return;
+            }
+            plugin.getLogger().info("Processing " + pending.size() + " queued outbound email(s)...");
+            for (DatabaseManager.OutboundMail mail : pending) {
+                try {
+                    sendEmail(mail.fromEmail, mail.fromName, mail.toEmail, mail.subject, mail.body, mail.isHtml);
+                    plugin.getDatabaseManager().removeOutboundMail(mail.id);
+                    plugin.getLogger().info("Successfully delivered queued email to " + mail.toEmail);
+                    plugin.getDatabaseManager().saveIncomingMail(mail.fromEmail, mail.toEmail, "[DELIVERED] " + mail.subject, mail.body, mail.isHtml);
+                } catch (Exception e) {
+                    int nextRetryDelay = (mail.retries + 1) * 60; // Exponential backup
+                    plugin.getDatabaseManager().incrementMailRetry(mail.id, nextRetryDelay);
+                    plugin.getLogger().log(Level.WARNING, "Failed to deliver queued email to " + mail.toEmail + " (Attempt " + (mail.retries + 1) + "/5). Retry in " + nextRetryDelay + "s. Error: " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.WARNING, "Error while processing outbound email queue: " + e.getMessage());
+        } finally {
+            isProcessing = false;
+        }
     }
 
     private boolean isBukkit() {
@@ -44,8 +92,12 @@ public class SMTPManager {
         CompletableFuture.runAsync(() -> {
             try {
                 sendEmail(fromEmail, fromName, toEmail, subject, body, isHtml);
+                plugin.getDatabaseManager().saveIncomingMail(fromEmail, toEmail, "[SENT] " + subject, body, isHtml);
+                plugin.getLogger().log(Level.INFO, "Email successfully sent to " + toEmail + " with subject: " + subject);
             } catch (Exception e) {
-                plugin.getLogger().log(Level.WARNING, "Failed to send async email from " + fromEmail + " to " + toEmail + ": " + e.getMessage());
+                plugin.getLogger().log(Level.WARNING, "Failed to send async email to " + toEmail + ", queueing for retry: " + e.getMessage());
+                plugin.getDatabaseManager().addOutboundMailToQueue(fromEmail, fromName, toEmail, subject, body, isHtml ? 1 : 0);
+                plugin.getDatabaseManager().saveIncomingMail(fromEmail, toEmail, "[QUEUED] " + subject, body, isHtml);
             }
         });
     }
@@ -93,8 +145,9 @@ public class SMTPManager {
             }
 
             // Custom placeholder replacement
-            body = body.replace("{player}", playerName).replace("{code}", code);
-            subject = subject.replace("{player}", playerName).replace("{code}", code);
+            String link = "https://" + config.mailHandlerDomain + ":" + config.mailHandlerPort + "/api/verify-link?uuid=" + playerUuid + "&code=" + code;
+            body = body.replace("{player}", playerName).replace("{code}", code).replace("{link}", link);
+            subject = subject.replace("{player}", playerName).replace("{code}", code).replace("{link}", link);
 
             // PlaceholderAPI support if enabled and running on Bukkit
             if (isBukkit() && org.bukkit.Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
@@ -109,8 +162,12 @@ public class SMTPManager {
 
             try {
                 sendEmail(toEmail, subject, body, isHtml);
+                plugin.getDatabaseManager().saveIncomingMail(config.smtpFromAddress, toEmail, "[SENT] " + subject, body, isHtml);
+                plugin.getLogger().log(Level.INFO, "Verification email successfully sent to " + toEmail + " for player " + playerName + " (Code: " + code + ")");
             } catch (Exception e) {
-                // Already logged in sendEmail
+                plugin.getLogger().log(Level.WARNING, "Failed to send verification email to " + toEmail + ", queueing for retry: " + e.getMessage());
+                plugin.getDatabaseManager().addOutboundMailToQueue(config.smtpFromAddress, config.smtpFromName, toEmail, subject, body, isHtml ? 1 : 0);
+                plugin.getDatabaseManager().saveIncomingMail(config.smtpFromAddress, toEmail, "[QUEUED] " + subject, body, isHtml);
             }
         });
     }

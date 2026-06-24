@@ -73,6 +73,7 @@ public class MailHandlerServer {
             server.createContext("/api/send", new SendMailHandler());
             server.createContext("/api/tokens", new ApiTokensHandler());
             server.createContext("/api/info", new InfoHandler());
+            server.createContext("/api/verify-link", new VerifyLinkHandler());
             
             // Admin Routes
             server.createContext("/api/admin/permissions", new AdminPermissionsHandler());
@@ -193,6 +194,22 @@ public class MailHandlerServer {
                 String password = json.has("password") ? json.get("password").getAsString() : "";
                 int code = json.has("totp_code") && !json.get("totp_code").getAsString().isEmpty() ? json.get("totp_code").getAsInt() : -1;
 
+                if (username.isEmpty() || username.length() > 16 || !username.matches("^[a-zA-Z0-9_-]{3,16}$")) {
+                    Map<String, String> err = new HashMap<>();
+                    err.put("status", "error");
+                    err.put("message", "Invalid username format. Must be 3-16 alphanumeric characters, dashes, or underscores.");
+                    sendJSONResponse(exchange, 400, err);
+                    return;
+                }
+
+                if (password.isEmpty() || password.length() > 128) {
+                    Map<String, String> err = new HashMap<>();
+                    err.put("status", "error");
+                    err.put("message", "Invalid password length.");
+                    sendJSONResponse(exchange, 400, err);
+                    return;
+                }
+
                 StaffAccount account = plugin.getDatabaseManager().getStaffAccount(username);
                 if (account == null) {
                     Map<String, String> err = new HashMap<>();
@@ -281,10 +298,10 @@ public class MailHandlerServer {
                 JsonObject json = new Gson().fromJson(body, JsonObject.class);
                 String password = json.has("password") ? json.get("password").getAsString() : "";
 
-                if (password.trim().length() < 6) {
+                if (password.length() < 6 || password.length() > 128) {
                     Map<String, String> err = new HashMap<>();
                     err.put("status", "error");
-                    err.put("message", "Password must be at least 6 characters.");
+                    err.put("message", "Password must be between 6 and 128 characters.");
                     sendJSONResponse(exchange, 400, err);
                     return;
                 }
@@ -539,10 +556,24 @@ public class MailHandlerServer {
                 String content = json.has("body") ? json.get("body").getAsString() : "";
                 boolean isHtml = json.has("isHtml") && json.get("isHtml").getAsBoolean();
 
-                if (to.isEmpty()) {
+                if (to.isEmpty() || to.length() > 254 || !to.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
                     Map<String, String> err = new HashMap<>();
                     err.put("status", "error");
-                    err.put("message", "Recipient email is required.");
+                    err.put("message", "Invalid recipient email address format.");
+                    sendJSONResponse(exchange, 400, err);
+                    return;
+                }
+                if (subject.length() > 256) {
+                    Map<String, String> err = new HashMap<>();
+                    err.put("status", "error");
+                    err.put("message", "Subject cannot exceed 256 characters.");
+                    sendJSONResponse(exchange, 400, err);
+                    return;
+                }
+                if (content.length() > 65536) {
+                    Map<String, String> err = new HashMap<>();
+                    err.put("status", "error");
+                    err.put("message", "Email content cannot exceed 64KB.");
                     sendJSONResponse(exchange, 400, err);
                     return;
                 }
@@ -578,6 +609,14 @@ public class MailHandlerServer {
                 String body = readRequestBody(exchange);
                 JsonObject json = new Gson().fromJson(body, JsonObject.class);
                 String targetUsername = json.has("username") ? json.get("username").getAsString().trim() : "";
+
+                if (targetUsername.isEmpty() || targetUsername.length() > 16 || !targetUsername.matches("^[a-zA-Z0-9_-]{3,16}$")) {
+                    Map<String, String> err = new HashMap<>();
+                    err.put("status", "error");
+                    err.put("message", "Invalid target username format.");
+                    sendJSONResponse(exchange, 400, err);
+                    return;
+                }
                 
                 StaffAccount target = plugin.getDatabaseManager().getStaffAccount(targetUsername);
                 if (target == null) {
@@ -612,7 +651,15 @@ public class MailHandlerServer {
                     List<String> perms = new ArrayList<>();
                     JsonArray arr = json.getAsJsonArray("permissions");
                     for (JsonElement el : arr) {
-                        perms.add(el.getAsString().trim().toLowerCase());
+                        String mailbox = el.getAsString().trim().toLowerCase();
+                        if (mailbox.length() > 64 || !mailbox.matches("^[a-zA-Z0-9._-]+$")) {
+                            Map<String, String> err = new HashMap<>();
+                            err.put("status", "error");
+                            err.put("message", "Invalid mailbox permission format.");
+                            sendJSONResponse(exchange, 400, err);
+                            return;
+                        }
+                        perms.add(mailbox);
                     }
                     plugin.getDatabaseManager().updateStaffPermissions(target.id, perms);
                 }
@@ -625,6 +672,20 @@ public class MailHandlerServer {
                         JsonObject obj = el.getAsJsonObject();
                         String mailbox = obj.get("mailbox").getAsString().trim().toLowerCase();
                         String allowed = obj.get("allowedSender").getAsString().trim().toLowerCase();
+                        if (mailbox.length() > 64 || !mailbox.matches("^[a-zA-Z0-9._-]+$")) {
+                            Map<String, String> err = new HashMap<>();
+                            err.put("status", "error");
+                            err.put("message", "Invalid mailbox in filter.");
+                            sendJSONResponse(exchange, 400, err);
+                            return;
+                        }
+                        if (allowed.length() > 128 || !allowed.matches("^[a-zA-Z0-9._@*+-]+$")) {
+                            Map<String, String> err = new HashMap<>();
+                            err.put("status", "error");
+                            err.put("message", "Invalid allowed sender in filter.");
+                            sendJSONResponse(exchange, 400, err);
+                            return;
+                        }
                         filters.add(new SenderFilter(mailbox, allowed));
                     }
                     plugin.getDatabaseManager().updateStaffFilters(target.id, filters);
@@ -656,6 +717,14 @@ public class MailHandlerServer {
                 String body = readRequestBody(exchange);
                 JsonObject json = new Gson().fromJson(body, JsonObject.class);
                 String targetUsername = json.has("username") ? json.get("username").getAsString().trim() : "";
+
+                if (targetUsername.isEmpty() || targetUsername.length() > 16 || !targetUsername.matches("^[a-zA-Z0-9_-]{3,16}$")) {
+                    Map<String, String> err = new HashMap<>();
+                    err.put("status", "error");
+                    err.put("message", "Invalid target username format.");
+                    sendJSONResponse(exchange, 400, err);
+                    return;
+                }
 
                 StaffAccount target = plugin.getDatabaseManager().getStaffAccount(targetUsername);
                 if (target == null) {
@@ -840,6 +909,21 @@ public class MailHandlerServer {
                     String permissions = json.has("permissions") ? json.get("permissions").getAsString().trim() : "read_mails,send_mails";
                     if (permissions.isEmpty()) permissions = "read_mails,send_mails";
 
+                    if (name.length() > 64 || !name.matches("^[a-zA-Z0-9_\\s-]{1,64}$")) {
+                        Map<String, String> err = new HashMap<>();
+                        err.put("status", "error");
+                        err.put("message", "Invalid API token name. Only alphanumeric, space, underscore, and hyphen are allowed.");
+                        sendJSONResponse(exchange, 400, err);
+                        return;
+                    }
+                    if (permissions.length() > 128 || !permissions.matches("^[a-zA-Z0-9_,]{1,128}$")) {
+                        Map<String, String> err = new HashMap<>();
+                        err.put("status", "error");
+                        err.put("message", "Invalid API permissions format.");
+                        sendJSONResponse(exchange, 400, err);
+                        return;
+                    }
+
                     // I did , dont remember what we say it, but its cool - making random uuid string for API keys
                     // Generate a secure 48-character API token (prefix pt_ + random string)
                     String token = "pt_" + java.util.UUID.randomUUID().toString().replace("-", "") + 
@@ -986,10 +1070,24 @@ public class MailHandlerServer {
                 String content = json.has("body") ? json.get("body").getAsString() : "";
                 boolean isHtml = json.has("isHtml") && json.get("isHtml").getAsBoolean();
 
-                if (to.isEmpty()) {
+                if (to.isEmpty() || to.length() > 254 || !to.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
                     Map<String, String> err = new HashMap<>();
                     err.put("status", "error");
-                    err.put("message", "Recipient email ('to') is required.");
+                    err.put("message", "Invalid recipient email ('to') address format.");
+                    sendJSONResponse(exchange, 400, err);
+                    return;
+                }
+                if (subject.length() > 256) {
+                    Map<String, String> err = new HashMap<>();
+                    err.put("status", "error");
+                    err.put("message", "Subject cannot exceed 256 characters.");
+                    sendJSONResponse(exchange, 400, err);
+                    return;
+                }
+                if (content.length() > 65536) {
+                    Map<String, String> err = new HashMap<>();
+                    err.put("status", "error");
+                    err.put("message", "Email content cannot exceed 64KB.");
                     sendJSONResponse(exchange, 400, err);
                     return;
                 }
@@ -1028,5 +1126,161 @@ public class MailHandlerServer {
                 sendResponse(exchange, 500, "Server error: " + e.getMessage());
             }
         }
+    }
+
+    private class VerifyLinkHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
+                handleOptions(exchange);
+                return;
+            }
+            if (!exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+                sendResponse(exchange, 405, "Method Not Allowed");
+                return;
+            }
+
+            try {
+                String query = exchange.getRequestURI().getQuery();
+                String uuidStr = "";
+                String code = "";
+                if (query != null) {
+                    String[] pairs = query.split("&");
+                    for (String pair : pairs) {
+                        String[] parts = pair.split("=", 2);
+                        if (parts.length == 2) {
+                            String key = java.net.URLDecoder.decode(parts[0], "UTF-8");
+                            String val = java.net.URLDecoder.decode(parts[1], "UTF-8");
+                            if (key.equalsIgnoreCase("uuid")) {
+                                uuidStr = val;
+                            } else if (key.equalsIgnoreCase("code")) {
+                                code = val;
+                            }
+                        }
+                    }
+                }
+
+                if (uuidStr.isEmpty() || code.isEmpty()) {
+                    sendHTMLResponse(exchange, 400, getVerificationHTML("Verification Failed", "Missing parameters in verification URL. Please make sure the link is fully copied.", false));
+                    return;
+                }
+
+                UUID uuid;
+                try {
+                    uuid = UUID.fromString(uuidStr);
+                } catch (IllegalArgumentException e) {
+                    sendHTMLResponse(exchange, 400, getVerificationHTML("Verification Failed", "Invalid player UUID format.", false));
+                    return;
+                }
+
+                boolean success = plugin.getDatabaseManager().verifySubscription(uuid, code);
+                if (success) {
+                    String playerName = plugin.getPlayerName(uuid);
+                    
+                    plugin.triggerVerificationRewards(uuid);
+                    sendHTMLResponse(exchange, 200, getVerificationHTML("Verification Successful", "Congratulations " + playerName + "! Your email has been successfully verified, and your in-game rewards have been processed.", true));
+                } else {
+                    sendHTMLResponse(exchange, 400, getVerificationHTML("Verification Failed", "Incorrect code, expired verification request, or subscription already verified.", false));
+                }
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Error in verify link handler: " + e.getMessage(), e);
+                sendHTMLResponse(exchange, 500, getVerificationHTML("Server Error", "An error occurred during verification: " + e.getMessage(), false));
+            }
+        }
+    }
+
+    private static void sendHTMLResponse(HttpExchange exchange, int statusCode, String html) throws IOException {
+        byte[] bytes = html.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().set("Content-Type", "text/html; charset=utf-8");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        exchange.sendResponseHeaders(statusCode, bytes.length);
+        try (java.io.OutputStream os = exchange.getResponseBody()) {
+            os.write(bytes);
+        }
+    }
+
+    private String getVerificationHTML(String title, String message, boolean success) {
+        String icon = success ? "&#10004;" : "&#10008;";
+        String iconClass = success ? "success-icon" : "error-icon";
+        
+        return "<!DOCTYPE html>\n" +
+                "<html>\n" +
+                "<head>\n" +
+                "    <meta charset=\"utf-8\">\n" +
+                "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
+                "    <title>" + title + " - RetroMail</title>\n" +
+                "    <link href=\"https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap\" rel=\"stylesheet\">\n" +
+                "    <style>\n" +
+                "        body {\n" +
+                "            background-color: #0f1115;\n" +
+                "            color: #d1d5db;\n" +
+                "            font-family: 'Outfit', sans-serif;\n" +
+                "            margin: 0;\n" +
+                "            padding: 0;\n" +
+                "            display: flex;\n" +
+                "            align-items: center;\n" +
+                "            justify-content: center;\n" +
+                "            min-height: 100vh;\n" +
+                "        }\n" +
+                "        .container {\n" +
+                "            background-color: #161920;\n" +
+                "            border: 1px solid #232835;\n" +
+                "            border-radius: 16px;\n" +
+                "            padding: 40px;\n" +
+                "            max-width: 480px;\n" +
+                "            width: 90%;\n" +
+                "            text-align: center;\n" +
+                "            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);\n" +
+                "        }\n" +
+                "        .icon {\n" +
+                "            font-size: 64px;\n" +
+                "            margin-bottom: 20px;\n" +
+                "        }\n" +
+                "        .success-icon {\n" +
+                "            color: #10b981;\n" +
+                "        }\n" +
+                "        .error-icon {\n" +
+                "            color: #ef4444;\n" +
+                "        }\n" +
+                "        h1 {\n" +
+                "            color: #ffffff;\n" +
+                "            font-size: 26px;\n" +
+                "            font-weight: 700;\n" +
+                "            margin-top: 0;\n" +
+                "            margin-bottom: 15px;\n" +
+                "        }\n" +
+                "        p {\n" +
+                "            font-size: 16px;\n" +
+                "            line-height: 1.6;\n" +
+                "            margin-bottom: 30px;\n" +
+                "        }\n" +
+                "        .btn {\n" +
+                "            display: inline-block;\n" +
+                "            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);\n" +
+                "            color: #ffffff;\n" +
+                "            text-decoration: none;\n" +
+                "            padding: 12px 30px;\n" +
+                "            font-weight: 600;\n" +
+                "            border-radius: 8px;\n" +
+                "            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);\n" +
+                "            transition: transform 0.2s, box-shadow 0.2s;\n" +
+                "        }\n" +
+                "        .btn:hover {\n" +
+                "            transform: translateY(-2px);\n" +
+                "            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);\n" +
+                "        }\n" +
+                "    </style>\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "    <div class=\"container\">\n" +
+                "        <div class=\"icon " + iconClass + "\">" + icon + "</div>\n" +
+                "        <h1>" + title + "</h1>\n" +
+                "        <p>" + message + "</p>\n" +
+                "        <a href=\"https://retro.ajaretro.dev\" class=\"btn\">Back to Website</a>\n" +
+                "    </div>\n" +
+                "</body>\n" +
+                "</html>";
     }
 }

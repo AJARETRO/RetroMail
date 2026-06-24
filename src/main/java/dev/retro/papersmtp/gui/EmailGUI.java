@@ -20,12 +20,12 @@ public class EmailGUI {
 
     public void open(Player player) {
         String title = plugin.getPluginConfig().getMessage("gui.title", "&0Email Settings");
-        Inventory inv = Bukkit.createInventory(new EmailGUIHolder(), 9, title);
+        Inventory inv = Bukkit.createInventory(new EmailGUIHolder(), 27, title);
 
         // Fill background with glass panes
         String glassName = plugin.getPluginConfig().getMessage("gui.glass-pane", " ");
         ItemStack pane = CompatibilityUtil.createItem("GRAY_STAINED_GLASS_PANE", 7, glassName, null);
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < 27; i++) {
             inv.setItem(i, pane);
         }
 
@@ -57,11 +57,48 @@ public class EmailGUI {
 
         inv.setItem(4, statusItem);
 
-        // Developer item at slot 8
+        // Row 1: Interactive preference toggles (only meaningful if they are subscribed or pending, but we allow changing preference anytime)
+        // 1. Slot 11: Network News Toggle
+        String newsStatus = state.isNewsEnabled() ? "§a§lENABLED" : "§c§lDISABLED";
+        List<String> newsLore = new ArrayList<>();
+        newsLore.add("§7Receive major updates, patch logs,");
+        newsLore.add("§7and announcements directly in your mail.");
+        newsLore.add("§7");
+        newsLore.add("§7Status: " + newsStatus);
+        newsLore.add("§7");
+        newsLore.add("§eClick to Toggle.");
+        ItemStack newsItem = CompatibilityUtil.createItem("PAPER", 0, "§b§lNetwork News", newsLore);
+        inv.setItem(11, newsItem);
+
+        // 2. Slot 13: Server Surveys Toggle
+        String surveysStatus = state.isSurveysEnabled() ? "§a§lENABLED" : "§c§lDISABLED";
+        List<String> surveysLore = new ArrayList<>();
+        surveysLore.add("§7Participate in feedback, polls,");
+        surveysLore.add("§7and give opinions to earn extra rewards.");
+        surveysLore.add("§7");
+        surveysLore.add("§7Status: " + surveysStatus);
+        surveysLore.add("§7");
+        surveysLore.add("§eClick to Toggle.");
+        ItemStack surveysItem = CompatibilityUtil.createItem("WRITABLE_BOOK", 0, "§e§lServer Surveys", surveysLore);
+        inv.setItem(13, surveysItem);
+
+        // 3. Slot 15: Store Sales Toggle
+        String salesStatus = state.isSalesEnabled() ? "§a§lENABLED" : "§c§lDISABLED";
+        List<String> salesLore = new ArrayList<>();
+        salesLore.add("§7Get notified about premium shop sales,");
+        salesLore.add("§7ranks, keys, and special discount codes.");
+        salesLore.add("§7");
+        salesLore.add("§7Status: " + salesStatus);
+        salesLore.add("§7");
+        salesLore.add("§eClick to Toggle.");
+        ItemStack salesItem = CompatibilityUtil.createItem("GOLD_INGOT", 0, "§6§lStore Sales", salesLore);
+        inv.setItem(15, salesItem);
+
+        // Developer item at slot 22
         String devName = plugin.getPluginConfig().getMessage("gui.developer.name", "&d&lDeveloper Profile");
         List<String> devLore = plugin.getPluginConfig().getMessageList("gui.developer.lore");
         ItemStack brandingItem = CompatibilityUtil.createItem("BOOK", 0, devName, devLore);
-        inv.setItem(8, brandingItem);
+        inv.setItem(22, brandingItem);
 
         dev.retro.papersmtp.compatibility.SchedulerUtil.runForPlayer(plugin, player, () -> {
             player.openInventory(inv);

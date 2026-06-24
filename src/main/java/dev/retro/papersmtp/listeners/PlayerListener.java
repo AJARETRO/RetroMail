@@ -66,7 +66,7 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        if (event.getRawSlot() == 8) {
+        if (event.getRawSlot() == 22) {
             player.closeInventory();
             CompatibilityUtil.playSound(player, "UI_BUTTON_CLICK", "CLICK");
             net.md_5.bungee.api.chat.TextComponent message = new net.md_5.bungee.api.chat.TextComponent("§d§l[Mail System] §7Created by §bAJA_RETRO§7. ");
@@ -78,34 +78,84 @@ public class PlayerListener implements Listener {
             return;
         }
 
+        if (event.getRawSlot() == 11) {
+            CompatibilityUtil.playSound(player, "UI_BUTTON_CLICK", "CLICK");
+            dev.retro.papersmtp.compatibility.SchedulerUtil.runAsync(plugin, () -> {
+                SubscriptionState state = plugin.getDatabaseManager().getSubscriptionState(player.getUniqueId());
+                boolean nextState = !state.isNewsEnabled();
+                plugin.getDatabaseManager().setSubscriptionPreference(player.getUniqueId(), "news_enabled", nextState);
+                dev.retro.papersmtp.compatibility.SchedulerUtil.runForPlayer(plugin, player, () -> {
+                    plugin.getEmailGUI().open(player);
+                });
+            });
+            return;
+        }
+
+        if (event.getRawSlot() == 13) {
+            CompatibilityUtil.playSound(player, "UI_BUTTON_CLICK", "CLICK");
+            dev.retro.papersmtp.compatibility.SchedulerUtil.runAsync(plugin, () -> {
+                SubscriptionState state = plugin.getDatabaseManager().getSubscriptionState(player.getUniqueId());
+                boolean nextState = !state.isSurveysEnabled();
+                plugin.getDatabaseManager().setSubscriptionPreference(player.getUniqueId(), "surveys_enabled", nextState);
+                dev.retro.papersmtp.compatibility.SchedulerUtil.runForPlayer(plugin, player, () -> {
+                    plugin.getEmailGUI().open(player);
+                });
+            });
+            return;
+        }
+
+        if (event.getRawSlot() == 15) {
+            CompatibilityUtil.playSound(player, "UI_BUTTON_CLICK", "CLICK");
+            dev.retro.papersmtp.compatibility.SchedulerUtil.runAsync(plugin, () -> {
+                SubscriptionState state = plugin.getDatabaseManager().getSubscriptionState(player.getUniqueId());
+                boolean nextState = !state.isSalesEnabled();
+                plugin.getDatabaseManager().setSubscriptionPreference(player.getUniqueId(), "sales_enabled", nextState);
+                dev.retro.papersmtp.compatibility.SchedulerUtil.runForPlayer(plugin, player, () -> {
+                    plugin.getEmailGUI().open(player);
+                });
+            });
+            return;
+        }
+
         if (event.getRawSlot() == 4) {
-            SubscriptionState state = plugin.getDatabaseManager().getSubscriptionState(player.getUniqueId());
             player.closeInventory();
             CompatibilityUtil.playSound(player, "UI_BUTTON_CLICK", "CLICK");
-
-            if (state.getType() == SubscriptionState.Type.NONE) {
-                plugin.getPendingEmailInputs().put(player.getUniqueId(), true);
-                String msg = plugin.getPluginConfig().getMessage("enter-email-prompt", "&e[RetroMail] Please type your email address in chat. Type &c'cancel' &eto abort.");
-                player.sendMessage(msg);
-            } else if (state.getType() == SubscriptionState.Type.PENDING) {
-                if (event.getClick() == ClickType.RIGHT) {
-                    plugin.getDatabaseManager().unsubscribe(player.getUniqueId());
-                    plugin.broadcastSyncMessage("unsubscribe", player.getUniqueId().toString(), "");
-                    String msg = plugin.getPluginConfig().getMessage("reset-success", "&c[RetroMail] Verification cancelled and reset.");
-                    player.sendMessage(msg);
-                    CompatibilityUtil.playSound(player, "BLOCK_ANVIL_LAND", "ANVIL_LAND");
-                } else {
-                    plugin.getPendingCodeInputs().put(player.getUniqueId(), true);
-                    String msg = plugin.getPluginConfig().getMessage("enter-code-prompt", "&e[RetroMail] Please type the verification code sent to your email. Type &c'cancel' &eto abort.");
-                    player.sendMessage(msg);
-                }
-            } else if (state.getType() == SubscriptionState.Type.VERIFIED) {
-                plugin.getDatabaseManager().unsubscribe(player.getUniqueId());
-                plugin.broadcastSyncMessage("unsubscribe", player.getUniqueId().toString(), "");
-                String msg = plugin.getPluginConfig().getMessage("unsubscribe-success", "&c[RetroMail] You have been unsubscribed from newsletters.");
-                player.sendMessage(msg);
-                CompatibilityUtil.playSound(player, "BLOCK_ANVIL_LAND", "ANVIL_LAND");
-            }
+            dev.retro.papersmtp.compatibility.SchedulerUtil.runAsync(plugin, () -> {
+                SubscriptionState state = plugin.getDatabaseManager().getSubscriptionState(player.getUniqueId());
+                dev.retro.papersmtp.compatibility.SchedulerUtil.runForPlayer(plugin, player, () -> {
+                    if (state.getType() == SubscriptionState.Type.NONE) {
+                        plugin.getPendingEmailInputs().put(player.getUniqueId(), true);
+                        String msg = plugin.getPluginConfig().getMessage("enter-email-prompt", "&e[RetroMail] Please type your email address in chat. Type &c'cancel' &eto abort.");
+                        player.sendMessage(msg);
+                    } else if (state.getType() == SubscriptionState.Type.PENDING) {
+                        if (event.getClick() == ClickType.RIGHT) {
+                            dev.retro.papersmtp.compatibility.SchedulerUtil.runAsync(plugin, () -> {
+                                plugin.getDatabaseManager().unsubscribe(player.getUniqueId());
+                                plugin.broadcastSyncMessage("unsubscribe", player.getUniqueId().toString(), "");
+                                dev.retro.papersmtp.compatibility.SchedulerUtil.runForPlayer(plugin, player, () -> {
+                                    String msg = plugin.getPluginConfig().getMessage("reset-success", "&c[RetroMail] Verification cancelled and reset.");
+                                    player.sendMessage(msg);
+                                    CompatibilityUtil.playSound(player, "BLOCK_ANVIL_LAND", "ANVIL_LAND");
+                                });
+                            });
+                        } else {
+                            plugin.getPendingCodeInputs().put(player.getUniqueId(), true);
+                            String msg = plugin.getPluginConfig().getMessage("enter-code-prompt", "&e[RetroMail] Please type the verification code sent to your email. Type &c'cancel' &eto abort.");
+                            player.sendMessage(msg);
+                        }
+                    } else if (state.getType() == SubscriptionState.Type.VERIFIED) {
+                        dev.retro.papersmtp.compatibility.SchedulerUtil.runAsync(plugin, () -> {
+                            plugin.getDatabaseManager().unsubscribe(player.getUniqueId());
+                            plugin.broadcastSyncMessage("unsubscribe", player.getUniqueId().toString(), "");
+                            dev.retro.papersmtp.compatibility.SchedulerUtil.runForPlayer(plugin, player, () -> {
+                                String msg = plugin.getPluginConfig().getMessage("unsubscribe-success", "&c[RetroMail] You have been unsubscribed from newsletters.");
+                                player.sendMessage(msg);
+                                CompatibilityUtil.playSound(player, "BLOCK_ANVIL_LAND", "ANVIL_LAND");
+                            });
+                        });
+                    }
+                });
+            });
         }
     }
 
@@ -147,20 +197,23 @@ public class PlayerListener implements Listener {
                 }
             }
 
-            // Set verification code and send email
+            // Set verification code and send email asynchronously
             String code = String.format("%06d", new Random().nextInt(999999));
-            plugin.getDatabaseManager().setPendingSubscription(uuid, message, code);
-            plugin.broadcastSyncMessage("pending", uuid.toString(), message + ":" + code);
+            dev.retro.papersmtp.compatibility.SchedulerUtil.runAsync(plugin, () -> {
+                plugin.getDatabaseManager().setPendingSubscription(uuid, message, code);
+                plugin.broadcastSyncMessage("pending", uuid.toString(), message + ":" + code);
+                plugin.getSMTPManager().sendVerificationEmailAsync(message, uuid, code);
+                
+                // Apply Cooldown
+                plugin.getEmailCooldowns().put(uuid, now + (plugin.getPluginConfig().emailCooldown * 1000L));
 
-            plugin.getSMTPManager().sendVerificationEmailAsync(message, uuid, code);
-
-            // Apply Cooldown
-            plugin.getEmailCooldowns().put(uuid, now + (plugin.getPluginConfig().emailCooldown * 1000L));
-
-            String verificationSentMsg = plugin.getPluginConfig().getMessage("verification-sent", "&a[RetroMail] Verification code sent to &b{email}&a. Please check your inbox and type &e/email &ato enter the code.")
-                    .replace("{email}", message);
-            player.sendMessage(verificationSentMsg);
-            CompatibilityUtil.playSound(player, "ENTITY_PLAYER_LEVELUP", "LEVEL_UP");
+                dev.retro.papersmtp.compatibility.SchedulerUtil.runForPlayer(plugin, player, () -> {
+                    String verificationSentMsg = plugin.getPluginConfig().getMessage("verification-sent", "&a[RetroMail] Verification code sent to &b{email}&a. Please check your inbox and type &e/email &ato enter the code.")
+                            .replace("{email}", message);
+                    player.sendMessage(verificationSentMsg);
+                    CompatibilityUtil.playSound(player, "ENTITY_PLAYER_LEVELUP", "LEVEL_UP");
+                });
+            });
 
         } else if (plugin.getPendingCodeInputs().containsKey(uuid)) {
             event.setCancelled(true);
@@ -173,31 +226,35 @@ public class PlayerListener implements Listener {
                 return;
             }
 
-            SubscriptionState state = plugin.getDatabaseManager().getSubscriptionState(uuid);
-            boolean success = plugin.getDatabaseManager().verifySubscription(uuid, message);
-            if (success) {
-                String successMsg = plugin.getPluginConfig().getMessage("verification-success", "&a&l[RetroMail] Verification successful! You are now subscribed.");
-                player.sendMessage(successMsg);
-                CompatibilityUtil.playSound(player, "UI_TOAST_CHALLENGE_COMPLETE", "LEVEL_UP");
+            dev.retro.papersmtp.compatibility.SchedulerUtil.runAsync(plugin, () -> {
+                SubscriptionState state = plugin.getDatabaseManager().getSubscriptionState(uuid);
+                boolean success = plugin.getDatabaseManager().verifySubscription(uuid, message);
+                dev.retro.papersmtp.compatibility.SchedulerUtil.runForPlayer(plugin, player, () -> {
+                    if (success) {
+                        String successMsg = plugin.getPluginConfig().getMessage("verification-success", "&a&l[RetroMail] Verification successful! You are now subscribed.");
+                        player.sendMessage(successMsg);
+                        CompatibilityUtil.playSound(player, "UI_TOAST_CHALLENGE_COMPLETE", "LEVEL_UP");
 
-                plugin.broadcastSyncMessage("verify", uuid.toString(), state.getEmail());
+                        plugin.broadcastSyncMessage("verify", uuid.toString(), state.getEmail());
 
-                // Send reward notification messages instantly to the player on this server
-                if (plugin.getPluginConfig().rewardsEnabled) {
-                    for (String msg : plugin.getPluginConfig().rewardMessages) {
-                        player.sendMessage(msg);
+                        // Send reward notification messages instantly to the player on this server
+                        if (plugin.getPluginConfig().rewardsEnabled) {
+                            for (String msg : plugin.getPluginConfig().rewardMessages) {
+                                player.sendMessage(msg);
+                            }
+                            
+                            // Queue reward commands on the proxy to execute across the entire server network
+                            if (!plugin.getPluginConfig().rewardCommands.isEmpty()) {
+                                plugin.queueRewardsOnBungee(uuid, plugin.getPluginConfig().rewardCommands);
+                            }
+                        }
+                    } else {
+                        String incorrectMsg = plugin.getPluginConfig().getMessage("incorrect-code", "&c[RetroMail] Incorrect code. Please reopen the menu with &e/email &cto try again.");
+                        player.sendMessage(incorrectMsg);
+                        CompatibilityUtil.playSound(player, "BLOCK_NOTE_BLOCK_BASS", "NOTE_BASS");
                     }
-                    
-                    // Queue reward commands on the proxy to execute across the entire server network
-                    if (!plugin.getPluginConfig().rewardCommands.isEmpty()) {
-                        plugin.queueRewardsOnBungee(uuid, plugin.getPluginConfig().rewardCommands);
-                    }
-                }
-            } else {
-                String incorrectMsg = plugin.getPluginConfig().getMessage("incorrect-code", "&c[RetroMail] Incorrect code. Please reopen the menu with &e/email &cto try again.");
-                player.sendMessage(incorrectMsg);
-                CompatibilityUtil.playSound(player, "BLOCK_NOTE_BLOCK_BASS", "NOTE_BASS");
-            }
+                });
+            });
         }
     }
 }

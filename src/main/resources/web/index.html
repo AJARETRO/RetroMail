@@ -32,20 +32,30 @@
             overflow-x: hidden;
         }
         .glass-panel {
-            background: rgba(22, 25, 32, 0.7);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            background: rgba(22, 25, 32, 0.75);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .glass-panel:hover {
+            box-shadow: 0 12px 48px 0 rgba(220, 38, 38, 0.15);
         }
         .glass-input {
-            background: rgba(15, 17, 23, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 17, 23, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             color: #f8fafc;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .glass-input:focus {
             border-color: #dc2626;
             outline: none;
-            box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25);
+            background: rgba(15, 17, 23, 0.9);
+        }
+        .glass-input:invalid:not(:placeholder-shown) {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
         }
         [v-cloak] {
             display: none;
@@ -63,19 +73,19 @@
             <div v-if="errorMsg" class="bg-red-950/60 border border-red-800 text-red-300 p-3 rounded-lg text-sm text-center flex items-center justify-center gap-2">
                 <i class="fa-solid fa-triangle-exclamation"></i> {{ errorMsg }}
             </div>
-
+ 
             <form @submit.prevent="handleLogin" class="flex flex-col gap-4">
                 <div>
                     <label class="block text-gray-400 text-xs font-semibold mb-2 uppercase tracking-wider">Username</label>
-                    <input type="text" v-model="loginForm.username" required class="w-full glass-input rounded-xl px-4 py-3 text-sm" placeholder="Enter username...">
+                    <input type="text" v-model="loginForm.username" required maxlength="16" pattern="^[a-zA-Z0-9_-]{3,16}$" title="Username must be 3-16 characters and contain only alphanumeric, dashes, or underscores" class="w-full glass-input rounded-xl px-4 py-3 text-sm" placeholder="Enter username...">
                 </div>
                 <div>
                     <label class="block text-gray-400 text-xs font-semibold mb-2 uppercase tracking-wider">Password</label>
-                    <input type="password" v-model="loginForm.password" required class="w-full glass-input rounded-xl px-4 py-3 text-sm" placeholder="••••••••">
+                    <input type="password" v-model="loginForm.password" required maxlength="128" class="w-full glass-input rounded-xl px-4 py-3 text-sm" placeholder="••••••••">
                 </div>
                 <div>
                     <label class="block text-gray-400 text-xs font-semibold mb-2 uppercase tracking-wider">2FA Token (Optional)</label>
-                    <input type="text" v-model="loginForm.totpCode" class="w-full glass-input rounded-xl px-4 py-3 text-sm text-center tracking-widest" placeholder="123456">
+                    <input type="text" v-model="loginForm.totpCode" maxlength="6" pattern="^[0-9]{6}$" title="2FA token must be a 6-digit number" class="w-full glass-input rounded-xl px-4 py-3 text-sm text-center tracking-widest" placeholder="123456">
                 </div>
                 <button type="submit" :disabled="loading" class="w-full bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl transition duration-200 shadow-lg shadow-red-950/40 text-sm mt-2">
                     <span v-if="loading"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Logging in...</span>

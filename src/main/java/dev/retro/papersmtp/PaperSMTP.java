@@ -132,6 +132,9 @@ public class PaperSMTP extends JavaPlugin implements PluginMessageListener, Mail
         if (mailHandlerServer != null) {
             mailHandlerServer.stop();
         }
+        if (smtpManager != null) {
+            smtpManager.shutdown();
+        }
         if (databaseManager != null) {
             databaseManager.close();
         }
@@ -369,4 +372,24 @@ public class PaperSMTP extends JavaPlugin implements PluginMessageListener, Mail
         org.bukkit.OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
         return (player != null && player.getName() != null) ? player.getName() : "Player";
     }
+
+    @Override
+    public void triggerVerificationRewards(UUID uuid) {
+        dev.retro.papersmtp.database.SubscriptionState subState = getDatabaseManager().getSubscriptionState(uuid);
+        String email = (subState != null) ? subState.getEmail() : "";
+        broadcastSyncMessage("verify", uuid.toString(), email);
+        
+        org.bukkit.entity.Player onlinePlayer = Bukkit.getPlayer(uuid);
+        if (onlinePlayer != null) {
+            if (getPluginConfig().rewardsEnabled) {
+                for (String msg : getPluginConfig().rewardMessages) {
+                    onlinePlayer.sendMessage(org.bukkit.ChatColor.translateAlternateColorCodes('&', msg));
+                }
+                if (!getPluginConfig().rewardCommands.isEmpty()) {
+                    queueRewardsOnBungee(uuid, getPluginConfig().rewardCommands);
+                }
+            }
+        }
+    }
 }
+
