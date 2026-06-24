@@ -1,0 +1,68 @@
+# RetroMail Configuration File
+
+# Database Settings
+database:
+  # Supported types: 'sqlite' or 'mysql'
+  type: 'sqlite'
+  
+  # Configuration for SQLite (if type is 'sqlite')
+  sqlite:
+    file: 'subscriptions.db'
+    
+  # Configuration for MySQL/MariaDB (if type is 'mysql' for multi-server syncs)
+  mysql:
+    host: '127.0.0.1'
+    port: 3306
+    database: 'papersmtp'
+    username: 'pelican'
+    password: 'DbSecurePass2026!'
+
+# SMTP Mail Server Settings
+smtp:
+  host: 'smtp.gmail.com'
+  port: 587
+  username: 'niloyahmed2484@gmail.com'
+  password: 'YOUR_SMTP_PASSWORD_HERE'
+  ssl: false
+  starttls: true
+  from-address: 'update@ajaretro.dev'
+  from-name: 'Retro Network'
+
+# Email Verification Template
+verification-email:
+  subject: 'Verify your email on Retro Network'
+  use-html: true
+  html-file: 'email_template.html'
+  body: "Hello {player},\n\nYour Minecraft email verification code is: {code}\n\nEnter this code in-game using /email verify {code} or via the in-game GUI menu to complete your subscription.\n\nRegards,\nRetro Network Staff"
+
+# Verification Rewards (Commands are run via Console)
+rewards:
+  enabled: true
+  commands:
+    - "give {player} diamond 5"
+    - "xp add {player} 100 points"
+  messages:
+    - "§a§l[RetroMail] §7Thank you for verifying your email! You have received your rewards."
+
+# Rate limit cooldown in seconds before a player can request another verification code
+email-cooldown: 60
+
+# Staff Web Mail Handler Configuration
+mail-handler:
+  enabled: true
+  port: 8080
+  domain: "ajaretro.dev"
+  # Protected mail addresses restricted only to ADMIN users
+  restricted-mailboxes:
+    - "billing@ajaretro.dev"
+    - "root@ajaretro.dev"
+    - "admin@ajaretro.dev"
+
+  # IMAP catch-all mailbox polling for receiving incoming replies
+  imap:
+    host: "imap.gmail.com"
+    port: 993
+    ssl: true
+    username: "niloyahmed2484@gmail.com"
+    password: "YOUR_IMAP_PASSWORD_HERE"
+    poll-interval-seconds: 30

@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetroMail - Account Settings</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        outfit: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: radial-gradient(circle at top right, #3b0712, #080203);
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(22, 25, 32, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .glass-input {
+            background: rgba(15, 17, 23, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+        }
+        .glass-input:focus {
+            border-color: #dc2626;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .dropdown-blur {
+            background: rgba(12, 14, 20, 0.95) !important;
+            backdrop-filter: blur(24px) !important;
+            -webkit-backdrop-filter: blur(24px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        }
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex items-center justify-center p-0 md:p-4 overflow-y-auto">
+    <div id="app" class="w-full min-h-screen md:min-h-0 md:h-[90vh] max-w-7xl flex flex-col justify-between" v-cloak>
+        
+        <!-- MAIN DASHBOARD -->
+        <div class="w-full min-h-screen md:min-h-0 md:h-[90vh] flex flex-col glass-panel md:rounded-2xl overflow-hidden">
+            <!-- Top Header Navbar -->
+            <div class="w-full border-b border-white/5 px-6 py-4 flex items-center justify-between bg-slate-900/40 backdrop-blur-md shrink-0 relative z-40">
+                <!-- Logo Header (Top Left) -->
+                <a href="/inbox.html" class="flex items-center gap-2 select-none">
+                    <h1 class="font-outfit text-2xl font-extrabold tracking-wider leading-none"><span class="text-red-600">AJA</span><span class="text-white">RETRO</span></h1>
+                </a>
+
+                <!-- Dropdown for profile/pfp (Top Right) -->
+                <div class="relative">
+                    <button @click="navDropdownOpen = !navDropdownOpen" class="flex items-center hover:opacity-85 focus:outline-none transition-transform duration-200 hover:scale-105 active:scale-95 py-1">
+                        <img :src="profile.avatarPath ? profile.avatarPath : 'https://crafatar.com/avatars/MHF_Steve?size=128&overlay'" class="w-10 h-10 rounded-full border-2 border-red-600 hover:border-white transition-colors duration-200 object-cover shadow-md shadow-red-950/20">
+                    </button>
+                    
+                    <!-- Dropdown Menu (Top Down Bar) -->
+                    <div v-if="navDropdownOpen" class="absolute right-0 mt-3 w-64 glass-panel dropdown-blur rounded-2xl shadow-xl z-50 p-3 border border-white/10 flex flex-col gap-1.5 animate-fadeIn">
+                        <!-- User Profile Info Card inside Dropdown -->
+                        <div class="px-3 py-2 border-b border-white/5 mb-1.5 flex items-center gap-3">
+                            <img :src="profile.avatarPath ? profile.avatarPath : 'https://crafatar.com/avatars/MHF_Steve?size=128&overlay'" class="w-8 h-8 rounded-full border border-white/10 object-cover">
+                            <div class="text-left">
+                                <h2 class="font-outfit font-bold text-xs text-slate-200 leading-none">{{ profile.username }}</h2>
+                                <span class="text-[9px] uppercase font-extrabold tracking-wider mt-0.5 block" :class="profile.role === 'ADMIN' ? 'text-red-400' : 'text-emerald-400'">{{ profile.role }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Pages in Top Down Bar -->
+                        <a href="/inbox.html" class="hover:bg-white/5 text-gray-400 hover:text-gray-200 border border-transparent w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition duration-200 text-xs font-semibold">
+                            <span class="flex items-center gap-3"><i class="fa-solid fa-inbox text-sm"></i> Inbox</span>
+                            <span class="bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm shadow-red-900/40">{{ mails.length }}</span>
+                        </a>
+                        <button @click="openComposeModal(); navDropdownOpen = false" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white transition duration-200 text-xs font-bold shadow-md shadow-red-950/20">
+                            <i class="fa-solid fa-pen text-xs"></i> Send Outbound
+                        </button>
+                        <a href="/settings.html" class="bg-red-600/25 text-white border border-red-500/30 w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition duration-200 text-xs font-semibold">
+                            <i class="fa-solid fa-sliders text-sm"></i> Settings
+                        </a>
+                        <a v-if="profile.role === 'ADMIN'" href="/admin.html" class="hover:bg-white/5 text-gray-400 hover:text-gray-200 border border-transparent w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition duration-200 text-xs font-semibold">
+                            <i class="fa-solid fa-shield-halved text-sm"></i> Administration
+                        </a>
+                        <div class="border-t border-white/5 my-1.5"></div>
+                        <button @click="handleLogout" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-red-950/20 text-red-400 hover:text-red-300 transition duration-200 text-xs font-semibold border border-transparent hover:border-red-950/40">
+                            <i class="fa-solid fa-power-off text-sm"></i> Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-grow overflow-y-auto custom-scrollbar p-6 bg-slate-950/20">
+                <!-- Temporary Password Warning Banner -->
+                <div v-if="profile.tempPassword" class="bg-amber-950/60 border border-amber-800 text-amber-300 px-6 py-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-4 mb-6 shrink-0">
+                    <span><i class="fa-solid fa-circle-exclamation mr-2 text-sm"></i> You are using a temporary password. Please update your password immediately inside Settings.</span>
+                </div>
+
+                <!-- Settings Page Contents -->
+                <div class="flex flex-col gap-6">
+                    <div class="flex items-center gap-3 border-b border-white/5 pb-3">
+                        <i class="fa-solid fa-sliders text-2xl text-red-500"></i>
+                        <h3 class="font-outfit font-extrabold text-2xl text-slate-100">Account Settings</h3>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Profile Pic & Password Update -->
+                        <div class="flex flex-col gap-6">
+                            <!-- Avatar Upload Card -->
+                            <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4">
+                                <h4 class="font-outfit font-bold text-lg text-slate-200">Profile Picture</h4>
+                                <div class="flex items-center gap-4">
+                                    <img :src="profile.avatarPath ? profile.avatarPath : 'https://crafatar.com/avatars/MHF_Steve?size=128&overlay'" class="w-20 h-20 rounded-2xl border border-white/10 object-cover">
+                                    <div class="flex flex-col gap-2">
+                                        <input type="file" @change="uploadAvatar" ref="avatarInput" accept="image/*" class="hidden">
+                                        <button @click="$refs.avatarInput.click()" class="bg-red-600/20 hover:bg-red-600/30 text-red-300 font-bold text-xs px-4 py-2.5 rounded-xl border border-red-500/25 transition">Upload Image File</button>
+                                        <span class="text-[10px] text-gray-400">Max size 30 MB. Defaults to your Minecraft skin.</span>
+                                    </div>
+                                </div>
+                                <div v-if="avatarSuccess" class="text-xs text-emerald-400"><i class="fa-solid fa-circle-check"></i> Image updated!</div>
+                                <div v-if="avatarError" class="text-xs text-red-400"><i class="fa-solid fa-triangle-exclamation"></i> {{ avatarError }}</div>
+                            </div>
+
+                            <!-- Change Password Card -->
+                            <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4">
+                                <h4 class="font-outfit font-bold text-lg text-slate-200">Change Password</h4>
+                                <form @submit.prevent="changePassword" class="flex flex-col gap-3">
+                                    <div>
+                                        <input type="password" v-model="passwordForm.password" required class="w-full glass-input rounded-xl px-4 py-2.5 text-xs" placeholder="New Password...">
+                                    </div>
+                                    <div>
+                                        <input type="password" v-model="passwordForm.confirm" required class="w-full glass-input rounded-xl px-4 py-2.5 text-xs" placeholder="Confirm Password...">
+                                    </div>
+                                    <button type="submit" class="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white font-bold text-xs py-3 px-4 rounded-xl transition duration-200 shadow-md">Change Password</button>
+                                </form>
+                                <div v-if="passwordSuccess" class="text-xs text-emerald-400"><i class="fa-solid fa-circle-check"></i> {{ passwordSuccess }}</div>
+                                <div v-if="passwordError" class="text-xs text-red-400"><i class="fa-solid fa-triangle-exclamation"></i> {{ passwordError }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Column 2: 2FA & API Tokens -->
+                        <div class="flex flex-col gap-6">
+                            <!-- 2FA Setup Card -->
+                            <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4">
+                                <h4 class="font-outfit font-bold text-lg text-slate-200">Two-Factor Authentication</h4>
+                                
+                                <div v-if="profile.totpEnabled" class="flex flex-col gap-2">
+                                    <div class="bg-emerald-950/40 border border-emerald-900 text-emerald-300 p-3 rounded-lg text-xs font-semibold flex items-center gap-2">
+                                        <i class="fa-solid fa-circle-check"></i> 2-Factor Authentication is currently ENABLED.
+                                    </div>
+                                    <p class="text-xs text-gray-400 mt-2">If you need to disable or reset 2FA, please contact your Server Administrator.</p>
+                                </div>
+
+                                <div v-else class="flex flex-col gap-4">
+                                    <p class="text-xs text-gray-400">Two-factor authentication adds an extra layer of security. Scan the QR code using Google Authenticator or Authy to configure your codes.</p>
+                                    
+                                    <div v-if="!setup2FAData" class="text-center py-4">
+                                        <button @click="initiate2FASetup" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md">Setup 2-Factor Verification</button>
+                                    </div>
+
+                                    <div v-else class="flex flex-col items-center gap-4">
+                                        <img :src="setup2FAData.qrCodeUrl" class="w-48 h-48 border border-white/10 rounded-xl p-2 bg-white">
+                                        <div class="text-center flex flex-col gap-1">
+                                            <span class="text-[10px] text-gray-400 uppercase tracking-wider">Secret Key</span>
+                                            <code class="text-xs bg-black/40 text-red-300 px-3 py-1 rounded-md tracking-wider font-mono">{{ setup2FAData.secret }}</code>
+                                        </div>
+                                        <div class="w-full border-t border-white/5 my-2"></div>
+                                        <form @submit.prevent="enable2FA" class="w-full flex gap-2">
+                                            <input type="text" v-model="totpCodeVerify" required class="flex-grow glass-input rounded-xl px-4 py-2.5 text-center text-xs tracking-widest font-bold" placeholder="6-Digit Code">
+                                            <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 rounded-xl transition duration-200">Verify & Lock</button>
+                                        </form>
+                                        <div v-if="totpError" class="text-xs text-red-400"><i class="fa-solid fa-triangle-exclamation"></i> {{ totpError }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- API Access Tokens Card -->
+                            <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4">
+                                <h4 class="font-outfit font-bold text-lg text-slate-200">API Access Tokens</h4>
+                                <p class="text-xs text-gray-400">Generate secure API tokens to interact with RetroMail from external applications.</p>
+                                
+                                <!-- Display newly generated token once -->
+                                <div v-if="newlyGeneratedToken" class="bg-red-950/40 border border-red-900/40 text-red-300 p-3 rounded-lg text-xs font-semibold flex flex-col gap-2">
+                                    <div class="flex items-center justify-between">
+                                        <span><i class="fa-solid fa-key mr-1.5"></i> Token Generated!</span>
+                                        <button @click="newlyGeneratedToken = ''" class="text-red-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                                    </div>
+                                    <p class="text-[10px] text-gray-400">Copy this token now. For security, it will not be shown again.</p>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <input type="text" readonly :value="newlyGeneratedToken" id="rawTokenInput" class="flex-grow glass-input rounded-lg px-3 py-1.5 text-xs font-mono select-all bg-black/40 text-red-300">
+                                        <button @click="copyGeneratedToken" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition"><i class="fa-regular fa-copy"></i></button>
+                                    </div>
+                                </div>
+
+                                <div v-if="apiTokenSuccess" class="text-xs text-emerald-400"><i class="fa-solid fa-circle-check"></i> {{ apiTokenSuccess }}</div>
+                                <div v-if="apiTokenError" class="text-xs text-red-400"><i class="fa-solid fa-triangle-exclamation"></i> {{ apiTokenError }}</div>
+
+                                <!-- Form to generate new token -->
+                                <form @submit.prevent="createApiToken" class="flex flex-col gap-2">
+                                    <div class="flex gap-2">
+                                        <input type="text" v-model="newTokenName" required class="flex-grow glass-input rounded-xl px-4 py-2.5 text-xs" placeholder="Token Name (e.g. Jenkins)...">
+                                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 rounded-xl transition duration-200 shadow-md whitespace-nowrap">Generate</button>
+                                    </div>
+                                    <div class="flex gap-4 px-1 text-xs text-gray-300">
+                                        <label class="flex items-center gap-1.5 cursor-pointer">
+                                            <input type="checkbox" v-model="newTokenPerms.read" class="accent-red-600">
+                                            <span>Read Emails</span>
+                                        </label>
+                                        <label class="flex items-center gap-1.5 cursor-pointer">
+                                            <input type="checkbox" v-model="newTokenPerms.send" class="accent-red-600">
+                                            <span>Send Emails</span>
+                                        </label>
+                                    </div>
+                                </form>
+
+                                <!-- List of existing tokens -->
+                                <div class="mt-2 flex flex-col gap-2">
+                                    <span class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Active Tokens ({{ apiTokens.length }})</span>
+                                    <div v-if="apiTokens.length === 0" class="text-xs text-gray-500 italic py-2 text-center">No active API tokens.</div>
+                                    <div v-else class="flex flex-col gap-2 max-h-[160px] overflow-y-auto custom-scrollbar">
+                                        <div v-for="token in apiTokens" :key="token.id" class="flex items-center justify-between p-3 rounded-xl bg-black/20 border border-white/5 text-xs">
+                                            <div class="flex flex-col min-w-0">
+                                                <span class="font-semibold text-slate-200 truncate">{{ token.name }}</span>
+                                                <span class="text-[9px] text-gray-400 font-bold uppercase mt-0.5">Permissions: {{ token.permissions ? token.permissions.replace('_', ' ') : 'none' }}</span>
+                                                <code class="text-[10px] text-red-300 font-mono mt-0.5">{{ maskToken(token.token) }}</code>
+                                            </div>
+                                            <div class="flex items-center gap-1.5 shrink-0 ml-2">
+                                                <button @click="copyTokenValue(token.token)" class="text-gray-400 hover:text-slate-200 p-1.5" title="Copy Raw Token"><i class="fa-regular fa-copy"></i></button>
+                                                <button @click="deleteApiToken(token.id)" class="text-red-400 hover:text-red-300 p-1.5" title="Delete Token"><i class="fa-regular fa-trash-can"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COMPOSE OUTBOUND MAIL MODAL -->
+        <div v-if="composeModal.open" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="w-full max-w-lg glass-panel rounded-2xl p-6 flex flex-col gap-4">
+                <div class="flex items-center justify-between border-b border-white/5 pb-3">
+                    <h3 class="font-outfit font-bold text-lg text-slate-200">Compose Outbound Message</h3>
+                    <button @click="closeComposeModal" class="text-gray-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form @submit.prevent="sendOutboundMail" class="flex flex-col gap-4">
+                    <div>
+                        <label class="block text-gray-400 text-xs font-semibold mb-1.5 uppercase tracking-wider">Recipient (To)</label>
+                        <input type="email" v-model="composeModal.to" required class="w-full glass-input rounded-xl px-4 py-2.5 text-sm" placeholder="client@email.com">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 text-xs font-semibold mb-1.5 uppercase tracking-wider">Subject</label>
+                        <input type="text" v-model="composeModal.subject" required class="w-full glass-input rounded-xl px-4 py-2.5 text-sm" placeholder="Subject description...">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 text-xs font-semibold mb-1.5 uppercase tracking-wider">Body</label>
+                        <textarea v-model="composeModal.body" required rows="6" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm font-sans" placeholder="Type message body..."></textarea>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" v-model="composeModal.isHtml" id="sendHtml" class="rounded border-white/10 bg-black/40 text-red-600 focus:ring-red-500">
+                        <label for="sendHtml" class="text-xs text-gray-400 select-none">Send as HTML content format</label>
+                    </div>
+                    <div class="flex items-center justify-end gap-3 mt-2">
+                        <button type="button" @click="closeComposeModal" class="px-5 py-2.5 border border-white/10 rounded-xl text-gray-400 text-sm font-semibold hover:bg-white/5 transition">Cancel</button>
+                        <button type="submit" class="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white font-bold text-sm px-6 py-2.5 rounded-xl transition duration-200 shadow-md">Send Email <i class="fa-solid fa-paper-plane ml-1"></i></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const profile = ref({
+                    username: '',
+                    email: '',
+                    role: '',
+                    avatarPath: '',
+                    tempPassword: false,
+                    totpEnabled: false
+                });
+
+                const mails = ref([]); // populated to keep badge count in nav dropdown correct
+                const apiTokens = ref([]);
+                const newTokenName = ref('');
+                const newTokenPerms = ref({ read: true, send: true });
+                const newlyGeneratedToken = ref('');
+                const apiTokenSuccess = ref('');
+                const apiTokenError = ref('');
+
+                const passwordForm = ref({
+                    password: '',
+                    confirm: ''
+                });
+                const passwordSuccess = ref('');
+                const passwordError = ref('');
+
+                const avatarSuccess = ref(false);
+                const avatarError = ref('');
+
+                const setup2FAData = ref(null);
+                const totpCodeVerify = ref('');
+                const totpError = ref('');
+
+                const composeModal = ref({
+                    open: false,
+                    to: '',
+                    subject: '',
+                    body: '',
+                    isHtml: false
+                });
+
+                const navDropdownOpen = ref(false);
+                const tokenKey = 'retromail_token';
+
+                const fetchDashboardData = async () => {
+                    const token = localStorage.getItem(tokenKey);
+                    if (!token) {
+                        window.location.href = '/index.html';
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch('/api/dashboard', {
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+
+                        if (response.status === 401) {
+                            handleLogout();
+                            return;
+                        }
+
+                        const data = await response.json();
+                        profile.value = data.profile;
+                        mails.value = data.mails;
+                        await fetchApiTokens();
+                    } catch (e) {
+                        console.error('Failed to fetch data', e);
+                    }
+                };
+
+                const handleLogout = async () => {
+                    const token = localStorage.getItem(tokenKey);
+                    if (token) {
+                        try {
+                            await fetch('/api/logout', {
+                                headers: { 'Authorization': 'Bearer ' + token }
+                            });
+                        } catch(e){}
+                    }
+                    localStorage.removeItem(tokenKey);
+                    window.location.href = '/index.html';
+                };
+
+                const changePassword = async () => {
+                    passwordSuccess.value = '';
+                    passwordError.value = '';
+
+                    if (passwordForm.value.password !== passwordForm.value.confirm) {
+                        passwordError.value = 'Passwords do not match.';
+                        return;
+                    }
+
+                    const token = localStorage.getItem(tokenKey);
+                    try {
+                        const response = await fetch('/api/change-password', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + token
+                            },
+                            body: JSON.stringify({ password: passwordForm.value.password })
+                        });
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            passwordSuccess.value = data.message;
+                            passwordForm.value = { password: '', confirm: '' };
+                            await fetchDashboardData();
+                        } else {
+                            passwordError.value = data.message;
+                        }
+                    } catch(e) {
+                        passwordError.value = 'Failed to change password.';
+                    }
+                };
+
+                const uploadAvatar = async (event) => {
+                    avatarSuccess.value = false;
+                    avatarError.value = '';
+                    
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    if (file.size > 30 * 1024 * 1024) {
+                        avatarError.value = 'File exceeds 30MB limit.';
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = async () => {
+                        const base64Img = reader.result;
+                        const token = localStorage.getItem(tokenKey);
+                        try {
+                            const response = await fetch('/api/upload-avatar', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'Bearer ' + token
+                                },
+                                body: JSON.stringify({ image: base64Img })
+                            });
+                            const data = await response.json();
+                            if (data.status === 'success') {
+                                profile.value.avatarPath = data.avatarPath;
+                                avatarSuccess.value = true;
+                            } else {
+                                avatarError.value = data.message;
+                            }
+                        } catch(e) {
+                            avatarError.value = 'Failed to upload avatar image.';
+                        }
+                    };
+                };
+
+                const initiate2FASetup = async () => {
+                    const token = localStorage.getItem(tokenKey);
+                    try {
+                        const response = await fetch('/api/setup-2fa', {
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+                        setup2FAData.value = await response.json();
+                    } catch(e){
+                        console.error('Failed to init 2fa', e);
+                    }
+                };
+
+                const enable2FA = async () => {
+                    totpError.value = '';
+                    const token = localStorage.getItem(tokenKey);
+                    try {
+                        const response = await fetch('/api/enable-2fa', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + token
+                            },
+                            body: JSON.stringify({ code: parseInt(totpCodeVerify.value) })
+                        });
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            profile.value.totpEnabled = true;
+                            setup2FAData.value = null;
+                            totpCodeVerify.value = '';
+                        } else {
+                            totpError.value = data.message;
+                        }
+                    } catch(e){
+                        totpError.value = 'Verification failed.';
+                    }
+                };
+
+                const fetchApiTokens = async () => {
+                    const token = localStorage.getItem(tokenKey);
+                    if (!token) return;
+                    try {
+                        const response = await fetch('/api/tokens', {
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+                        if (response.ok) {
+                            apiTokens.value = await response.json();
+                        }
+                    } catch (e) {
+                        console.error('Failed to fetch API tokens', e);
+                    }
+                };
+
+                const createApiToken = async () => {
+                    if (!confirm('Are you sure you want to generate a new API token? This token will grant access to your account\'s email endpoints.')) {
+                        return;
+                    }
+                    apiTokenSuccess.value = '';
+                    apiTokenError.value = '';
+                    newlyGeneratedToken.value = '';
+                    const token = localStorage.getItem(tokenKey);
+                    
+                    const permsList = [];
+                    if (newTokenPerms.value.read) permsList.push('read_mails');
+                    if (newTokenPerms.value.send) permsList.push('send_mails');
+                    const permissionsString = permsList.join(',');
+
+                    try {
+                        const response = await fetch('/api/tokens', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + token
+                            },
+                            body: JSON.stringify({ 
+                                name: newTokenName.value,
+                                permissions: permissionsString
+                            })
+                        });
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            newlyGeneratedToken.value = data.token;
+                            newTokenName.value = '';
+                            apiTokenSuccess.value = 'Token generated successfully!';
+                            await fetchApiTokens();
+                        } else {
+                            apiTokenError.value = data.message || 'Failed to generate token.';
+                        }
+                    } catch (e) {
+                        apiTokenError.value = 'Failed to generate token.';
+                    }
+                };
+
+                const deleteApiToken = async (id) => {
+                    if (!confirm('Are you sure you want to delete this API token? Any applications using it will lose access.')) {
+                        return;
+                    }
+                    apiTokenSuccess.value = '';
+                    apiTokenError.value = '';
+                    const token = localStorage.getItem(tokenKey);
+                    try {
+                        const response = await fetch('/api/tokens', {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + token
+                            },
+                            body: JSON.stringify({ id: id })
+                        });
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            apiTokenSuccess.value = 'Token deleted successfully.';
+                            await fetchApiTokens();
+                        } else {
+                            apiTokenError.value = data.message || 'Failed to delete token.';
+                        }
+                    } catch (e) {
+                        apiTokenError.value = 'Failed to delete token.';
+                    }
+                };
+
+                const maskToken = (tokenVal) => {
+                    if (!tokenVal || tokenVal.length < 15) return 'pt_*******';
+                    return tokenVal.substring(0, 8) + '...' + tokenVal.substring(tokenVal.length - 8);
+                };
+
+                const copyGeneratedToken = () => {
+                    navigator.clipboard.writeText(newlyGeneratedToken.value);
+                    apiTokenSuccess.value = 'Token copied to clipboard!';
+                    setTimeout(() => { apiTokenSuccess.value = ''; }, 3000);
+                };
+
+                const copyTokenValue = (tokenVal) => {
+                    navigator.clipboard.writeText(tokenVal);
+                    apiTokenSuccess.value = 'Token copied to clipboard!';
+                    setTimeout(() => { apiTokenSuccess.value = ''; }, 3000);
+                };
+
+                const openComposeModal = () => {
+                    composeModal.value = { open: true, to: '', subject: '', body: '', isHtml: false };
+                };
+                const closeComposeModal = () => {
+                    composeModal.value.open = false;
+                };
+                const sendOutboundMail = async () => {
+                    const token = localStorage.getItem(tokenKey);
+                    try {
+                        const response = await fetch('/api/send', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + token
+                            },
+                            body: JSON.stringify(composeModal.value)
+                        });
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            closeComposeModal();
+                        }
+                    } catch(e){
+                        console.error('Failed to send mail', e);
+                    }
+                };
+
+                onMounted(async () => {
+                    await fetchDashboardData();
+                });
+
+                return {
+                    profile,
+                    mails,
+                    apiTokens,
+                    newTokenName,
+                    newTokenPerms,
+                    newlyGeneratedToken,
+                    apiTokenSuccess,
+                    apiTokenError,
+                    passwordForm,
+                    passwordSuccess,
+                    passwordError,
+                    avatarSuccess,
+                    avatarError,
+                    setup2FAData,
+                    totpCodeVerify,
+                    totpError,
+                    composeModal,
+                    navDropdownOpen,
+                    changePassword,
+                    uploadAvatar,
+                    initiate2FASetup,
+                    enable2FA,
+                    createApiToken,
+                    deleteApiToken,
+                    maskToken,
+                    copyGeneratedToken,
+                    copyTokenValue,
+                    openComposeModal,
+                    closeComposeModal,
+                    sendOutboundMail,
+                    handleLogout
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheduled Maintenance Alert</title>
+    <style>
+        body {
+            background-color: #0b0c10;
+            font-family: 'Outfit', 'Inter', Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        .wrapper {
+            background-color: #0b0c10;
+            width: 100%;
+            table-layout: fixed;
+            padding: 40px 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #1f2833;
+            border-radius: 16px;
+            border: 1px solid #c5a059;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+        }
+        .header {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            padding: 45px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .warning-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+        .content {
+            padding: 40px 35px;
+            color: #c5a059;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+        .content p {
+            color: #c5a059;
+        }
+        .content h2 {
+            color: #ffffff;
+            margin-top: 0;
+            font-size: 22px;
+            font-weight: 700;
+        }
+        .maintenance-details {
+            background-color: #0b0c10;
+            border: 1px dashed #d97706;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 25px 0;
+        }
+        .detail-item {
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #ffffff;
+        }
+        .detail-item strong {
+            color: #f59e0b;
+        }
+        .detail-item:last-child {
+            margin-bottom: 0;
+        }
+        .btn-container {
+            text-align: center;
+            margin: 35px 0 10px 0;
+        }
+        .btn {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            color: #ffffff !important;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 15px;
+            padding: 14px 32px;
+            border-radius: 30px;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(217, 119, 6, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .footer {
+            background-color: #0b0c10;
+            padding: 25px 35px;
+            text-align: center;
+            border-top: 1px solid #1f2833;
+        }
+        .footer p {
+            margin: 0;
+            color: #555555;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="container">
+            <div class="header">
+                <span class="warning-icon">⚠️</span>
+                <h1>System Maintenance Alert</h1>
+            </div>
+            <div class="content">
+                <h2>Hello Subscriber,</h2>
+                <p>Please note that the Retro Network servers will undergo scheduled system maintenance to perform hardware upgrades and database optimisations.</p>
+                
+                <div class="maintenance-details">
+                    <div class="detail-item"><strong>Start Time:</strong> 2026-06-25 at 04:00 UTC</div>
+                    <div class="detail-item"><strong>Estimated Duration:</strong> 2 Hours</div>
+                    <div class="detail-item"><strong>Affected Services:</strong> Game Servers & store webstore</div>
+                </div>
+                
+                <p>During this period, players will not be able to log in to the network. We are performing these upgrades to prepare our infrastructure for the upcoming season release. Follow our Discord channel for live progress updates during the downtime.</p>
+                
+                <div class="btn-container">
+                    <a href="https://discord.gg/ajaretro" class="btn" target="_blank">Join Discord for Live Updates</a>
+                </div>
+            </div>
+            <div class="footer">
+                <p>&copy; 2026 Retro Network. All rights reserved.</p>
+                <p style="margin-top: 8px; font-size: 11px; color: #555555;">To unsubscribe, run <strong>/email</strong> in-game and right-click the central item.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

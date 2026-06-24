@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetroMail - Inbox</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        outfit: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: radial-gradient(circle at top right, #3b0712, #080203);
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(22, 25, 32, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .glass-input {
+            background: rgba(15, 17, 23, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+        }
+        .glass-input:focus {
+            border-color: #dc2626;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .dropdown-blur {
+            background: rgba(12, 14, 20, 0.95) !important;
+            backdrop-filter: blur(24px) !important;
+            -webkit-backdrop-filter: blur(24px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        }
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex items-center justify-center p-0 md:p-4 overflow-y-auto">
+    <div id="app" class="w-full min-h-screen md:min-h-0 md:h-[90vh] max-w-7xl flex flex-col justify-between" v-cloak>
+        
+        <!-- MAIN DASHBOARD -->
+        <div class="w-full min-h-screen md:min-h-0 md:h-[90vh] flex flex-col glass-panel md:rounded-2xl overflow-hidden">
+            <!-- Top Header Navbar -->
+            <div class="w-full border-b border-white/5 px-6 py-4 flex items-center justify-between bg-slate-900/40 backdrop-blur-md shrink-0 relative z-40">
+                <!-- Logo Header (Top Left) -->
+                <a href="/inbox.html" class="flex items-center gap-2 select-none">
+                    <h1 class="font-outfit text-2xl font-extrabold tracking-wider leading-none"><span class="text-red-600">AJA</span><span class="text-white">RETRO</span></h1>
+                </a>
+
+                <!-- Dropdown for profile/pfp (Top Right) -->
+                <div class="relative">
+                    <button @click="navDropdownOpen = !navDropdownOpen" class="flex items-center hover:opacity-85 focus:outline-none transition-transform duration-200 hover:scale-105 active:scale-95 py-1">
+                        <img :src="profile.avatarPath ? profile.avatarPath : 'https://crafatar.com/avatars/MHF_Steve?size=128&overlay'" class="w-10 h-10 rounded-full border-2 border-red-600 hover:border-white transition-colors duration-200 object-cover shadow-md shadow-red-950/20">
+                    </button>
+                    
+                    <!-- Dropdown Menu (Top Down Bar) -->
+                    <div v-if="navDropdownOpen" class="absolute right-0 mt-3 w-64 glass-panel dropdown-blur rounded-2xl shadow-xl z-50 p-3 border border-white/10 flex flex-col gap-1.5 animate-fadeIn">
+                        <!-- User Profile Info Card inside Dropdown -->
+                        <div class="px-3 py-2 border-b border-white/5 mb-1.5 flex items-center gap-3">
+                            <img :src="profile.avatarPath ? profile.avatarPath : 'https://crafatar.com/avatars/MHF_Steve?size=128&overlay'" class="w-8 h-8 rounded-full border border-white/10 object-cover">
+                            <div class="text-left">
+                                <h2 class="font-outfit font-bold text-xs text-slate-200 leading-none">{{ profile.username }}</h2>
+                                <span class="text-[9px] uppercase font-extrabold tracking-wider mt-0.5 block" :class="profile.role === 'ADMIN' ? 'text-red-400' : 'text-emerald-400'">{{ profile.role }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Pages in Top Down Bar -->
+                        <a href="/inbox.html" class="bg-red-600/25 text-white border border-red-500/30 w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition duration-200 text-xs font-semibold">
+                            <span class="flex items-center gap-3"><i class="fa-solid fa-inbox text-sm"></i> Inbox</span>
+                            <span class="bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm shadow-red-900/40">{{ mails.length }}</span>
+                        </a>
+                        <button @click="openComposeModal(); navDropdownOpen = false" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white transition duration-200 text-xs font-bold shadow-md shadow-red-950/20">
+                            <i class="fa-solid fa-pen text-xs"></i> Send Outbound
+                        </button>
+                        <a href="/settings.html" class="hover:bg-white/5 text-gray-400 hover:text-gray-200 border border-transparent w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition duration-200 text-xs font-semibold">
+                            <i class="fa-solid fa-sliders text-sm"></i> Settings
+                        </a>
+                        <a v-if="profile.role === 'ADMIN'" href="/admin.html" class="hover:bg-white/5 text-gray-400 hover:text-gray-200 border border-transparent w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition duration-200 text-xs font-semibold">
+                            <i class="fa-solid fa-shield-halved text-sm"></i> Administration
+                        </a>
+                        <div class="border-t border-white/5 my-1.5"></div>
+                        <button @click="handleLogout" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-red-950/20 text-red-400 hover:text-red-300 transition duration-200 text-xs font-semibold border border-transparent hover:border-red-950/40">
+                            <i class="fa-solid fa-power-off text-sm"></i> Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-grow flex flex-col min-h-0 min-w-0 bg-slate-950/20">
+                <!-- Temporary Password Warning Banner -->
+                <div v-if="profile.tempPassword" class="bg-amber-950/60 border-b border-amber-800 text-amber-300 px-6 py-3 text-xs font-semibold flex items-center justify-between gap-4">
+                    <span><i class="fa-solid fa-circle-exclamation mr-2 text-sm"></i> You are using a temporary password. Please update your password immediately inside Settings.</span>
+                    <a href="/settings.html" class="bg-amber-600 text-white px-3 py-1 rounded-md font-bold hover:bg-amber-700 transition">Update Password</a>
+                </div>
+
+                <!-- Inbox Layout -->
+                <div class="flex-grow flex flex-col min-h-0 md:flex-row">
+                    <!-- Email List -->
+                    <div :class="activeMail ? 'hidden md:flex' : 'flex'" class="w-full md:w-80 border-b md:border-b-0 md:border-r border-white/5 flex flex-col min-h-0 shrink-0">
+                        <div class="p-4 border-b border-white/5 flex flex-col gap-3">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-outfit font-bold text-lg text-slate-200">Mailbox</h3>
+                                <button @click="fetchDashboardData" class="text-gray-400 hover:text-white transition" title="Refresh"><i class="fa-solid fa-rotate"></i></button>
+                            </div>
+                            <!-- Folder Selection Tabs -->
+                            <div class="flex bg-black/40 rounded-xl p-1 border border-white/5">
+                                <button @click="mailboxFolder = 'inbox'; currentPage = 1" :class="mailboxFolder === 'inbox' ? 'bg-red-600 text-white shadow-sm' : 'text-gray-400 hover:text-slate-200'" class="flex-1 text-center py-1.5 rounded-lg text-xs font-bold transition">
+                                    <i class="fa-solid fa-inbox mr-1"></i> Inbox ({{ incomingMails.length }})
+                                </button>
+                                <button @click="mailboxFolder = 'sent'; currentPage = 1" :class="mailboxFolder === 'sent' ? 'bg-red-600 text-white shadow-sm' : 'text-gray-400 hover:text-slate-200'" class="flex-1 text-center py-1.5 rounded-lg text-xs font-bold transition">
+                                    <i class="fa-solid fa-paper-plane mr-1"></i> Sent ({{ outgoingMails.length }})
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex-grow overflow-y-auto custom-scrollbar p-4 flex flex-col gap-2">
+                            <div v-if="filteredMails.length === 0" class="text-center py-8 text-gray-500 text-sm">
+                                <i class="fa-regular fa-envelope text-3xl mb-2 block"></i> No messages found.
+                            </div>
+                            <div v-for="mail in paginatedMails" :key="mail.id" @click="activeMail = mail" :class="activeMail && activeMail.id === mail.id ? 'bg-red-600/20 border-red-500/40 text-slate-100' : 'hover:bg-white/5 border-transparent text-slate-300'" class="p-4 rounded-xl border cursor-pointer transition flex flex-col gap-1.5">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="font-bold text-xs text-red-400 truncate max-w-[130px]">{{ mailboxFolder === 'sent' ? mail.mailTo : parseSenderName(mail.mailFrom) }}</span>
+                                    <span class="text-[10px] text-gray-500 whitespace-nowrap">{{ formatTime(mail.receivedAt) }}</span>
+                                </div>
+                                <h4 class="font-semibold text-sm truncate">{{ mail.subject ? mail.subject : '(No Subject)' }}</h4>
+                                <p class="text-xs text-gray-400 truncate">{{ stripHtml(mail.body) }}</p>
+                            </div>
+                        </div>
+                        <!-- Pagination Controller -->
+                        <div class="p-3 border-t border-white/5 bg-black/20 flex flex-col gap-2 shrink-0">
+                            <div class="flex items-center justify-between gap-2 text-xs">
+                                <span class="text-gray-400">Show:</span>
+                                <select v-model="mailsPerPage" @change="currentPage = 1" class="bg-black/60 border border-white/10 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-red-500">
+                                    <option :value="10">10</option>
+                                    <option :value="20">20</option>
+                                    <option :value="50">50</option>
+                                </select>
+                                <span class="text-[10px] text-gray-500">{{ (currentPage - 1) * mailsPerPage + 1 }}-{{ Math.min(currentPage * mailsPerPage, filteredMails.length) }} of {{ filteredMails.length }}</span>
+                            </div>
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button @click="currentPage > 1 && currentPage--" :disabled="currentPage === 1" class="px-2 py-1 bg-white/5 border border-white/10 rounded hover:bg-white/10 text-xs text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent transition">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <span class="text-xs text-gray-300 font-semibold px-2">Page {{ currentPage }} of {{ Math.ceil(filteredMails.length / mailsPerPage) || 1 }}</span>
+                                <button @click="currentPage < Math.ceil(filteredMails.length / mailsPerPage) && currentPage++" :disabled="currentPage >= Math.ceil(filteredMails.length / mailsPerPage)" class="px-2 py-1 bg-white/5 border border-white/10 rounded hover:bg-white/10 text-xs text-gray-400 disabled:opacity-30 disabled:hover:bg-transparent transition">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Email Reader Pane -->
+                    <div :class="activeMail ? 'flex' : 'hidden md:flex'" class="flex-grow flex flex-col min-h-0">
+                        <div v-if="activeMail" class="flex-grow flex flex-col min-h-0 p-6 gap-6">
+                            <!-- Mobile Back Button -->
+                            <button @click="activeMail = null" class="md:hidden flex items-center gap-1.5 text-gray-400 hover:text-white transition text-xs font-bold self-start">
+                                <i class="fa-solid fa-arrow-left"></i> Back to Mailbox
+                            </button>
+
+                            <div class="border-b border-white/5 pb-4 flex flex-col gap-2">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <h2 class="font-outfit font-bold text-xl text-slate-100">{{ activeMail.subject ? activeMail.subject : '(No Subject)' }}</h2>
+                                    <button @click="replyToMail" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5"><i class="fa-solid fa-reply"></i> Reply</button>
+                                </div>
+                                <div class="flex items-center gap-2 text-xs">
+                                    <span class="text-gray-400">From:</span> <span class="font-semibold text-red-300">{{ activeMail.mailFrom }}</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-xs">
+                                    <span class="text-gray-400">To:</span> <span class="font-semibold text-red-300">{{ activeMail.mailTo }}</span>
+                                </div>
+                                <div class="text-[11px] text-gray-500 mt-1"><i class="fa-regular fa-clock mr-1"></i> {{ activeMail.receivedAt }}</div>
+                            </div>
+                            
+                            <!-- SECURE EMAIL BODY RENDERER (Sandboxed iframe + pointer-events check) -->
+                            <div class="flex-grow rounded-xl overflow-hidden bg-white/5 border border-white/5 p-4 min-h-[300px]">
+                                <iframe :srcdoc="getSafeHtmlContent(activeMail)" sandbox="allow-popups" :class="{ 'pointer-events-none': navDropdownOpen }" class="w-full h-full border-0 bg-transparent text-slate-300"></iframe>
+                            </div>
+                        </div>
+                        <div v-else class="flex-grow flex flex-col items-center justify-center text-gray-500 py-12">
+                            <i class="fa-regular fa-envelope-open text-5xl mb-3"></i> Select an email from the left pane to view details.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COMPOSE OUTBOUND MAIL MODAL -->
+        <div v-if="composeModal.open" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="w-full max-w-lg glass-panel rounded-2xl p-6 flex flex-col gap-4">
+                <div class="flex items-center justify-between border-b border-white/5 pb-3">
+                    <h3 class="font-outfit font-bold text-lg text-slate-200">Compose Outbound Message</h3>
+                    <button @click="closeComposeModal" class="text-gray-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form @submit.prevent="sendOutboundMail" class="flex flex-col gap-4">
+                    <div>
+                        <label class="block text-gray-400 text-xs font-semibold mb-1.5 uppercase tracking-wider">Recipient (To)</label>
+                        <input type="email" v-model="composeModal.to" required class="w-full glass-input rounded-xl px-4 py-2.5 text-sm" placeholder="client@email.com">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 text-xs font-semibold mb-1.5 uppercase tracking-wider">Subject</label>
+                        <input type="text" v-model="composeModal.subject" required class="w-full glass-input rounded-xl px-4 py-2.5 text-sm" placeholder="Subject description...">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 text-xs font-semibold mb-1.5 uppercase tracking-wider">Body</label>
+                        <textarea v-model="composeModal.body" required rows="6" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm font-sans" placeholder="Type message body..."></textarea>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" v-model="composeModal.isHtml" id="sendHtml" class="rounded border-white/10 bg-black/40 text-red-600 focus:ring-red-500">
+                        <label for="sendHtml" class="text-xs text-gray-400 select-none">Send as HTML content format</label>
+                    </div>
+                    <div class="flex items-center justify-end gap-3 mt-2">
+                        <button type="button" @click="closeComposeModal" class="px-5 py-2.5 border border-white/10 rounded-xl text-gray-400 text-sm font-semibold hover:bg-white/5 transition">Cancel</button>
+                        <button type="submit" class="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white font-bold text-sm px-6 py-2.5 rounded-xl transition duration-200 shadow-md">Send Email <i class="fa-solid fa-paper-plane ml-1"></i></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const mails = ref([]);
+                const activeMail = ref(null);
+                const mailboxFolder = ref('inbox');
+                
+                const incomingMails = computed(() => mails.value.filter(m => !m.mailFrom.includes('(')));
+                const outgoingMails = computed(() => mails.value.filter(m => m.mailFrom.includes('(')));
+                const filteredMails = computed(() => mailboxFolder.value === 'sent' ? outgoingMails.value : incomingMails.value);
+
+                const mailsPerPage = ref(10);
+                const currentPage = ref(1);
+                const paginatedMails = computed(() => {
+                    const start = (currentPage.value - 1) * mailsPerPage.value;
+                    const end = start + mailsPerPage.value;
+                    return filteredMails.value.slice(start, end);
+                });
+
+                const profile = ref({
+                    username: '',
+                    email: '',
+                    role: '',
+                    avatarPath: '',
+                    tempPassword: false,
+                    totpEnabled: false
+                });
+
+                const composeModal = ref({
+                    open: false,
+                    to: '',
+                    subject: '',
+                    body: '',
+                    isHtml: false
+                });
+
+                const navDropdownOpen = ref(false);
+                const tokenKey = 'retromail_token';
+
+                const fetchDashboardData = async () => {
+                    const token = localStorage.getItem(tokenKey);
+                    if (!token) {
+                        window.location.href = '/index.html';
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch('/api/dashboard', {
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+
+                        if (response.status === 401) {
+                            handleLogout();
+                            return;
+                        }
+
+                        const data = await response.json();
+                        profile.value = data.profile;
+                        mails.value = data.mails;
+                    } catch (e) {
+                        console.error('Failed to fetch data', e);
+                    }
+                };
+
+                const handleLogout = async () => {
+                    const token = localStorage.getItem(tokenKey);
+                    if (token) {
+                        try {
+                            await fetch('/api/logout', {
+                                headers: { 'Authorization': 'Bearer ' + token }
+                            });
+                        } catch(e){}
+                    }
+                    localStorage.removeItem(tokenKey);
+                    window.location.href = '/index.html';
+                };
+
+                const openComposeModal = () => {
+                    composeModal.value = { open: true, to: '', subject: '', body: '', isHtml: false };
+                };
+                const closeComposeModal = () => {
+                    composeModal.value.open = false;
+                };
+                const sendOutboundMail = async () => {
+                    const token = localStorage.getItem(tokenKey);
+                    try {
+                        const response = await fetch('/api/send', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + token
+                            },
+                            body: JSON.stringify(composeModal.value)
+                        });
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            closeComposeModal();
+                            await fetchDashboardData();
+                        }
+                    } catch(e){
+                        console.error('Failed to send mail', e);
+                    }
+                };
+
+                const replyToMail = () => {
+                    if (!activeMail.value) return;
+                    composeModal.value = {
+                        open: true,
+                        to: activeMail.value.mailFrom.replace(/<[^>]*>/, '').trim(),
+                        subject: 'Re: ' + activeMail.value.subject,
+                        body: '\n\n----- Original Message -----\nFrom: ' + activeMail.value.mailFrom + '\nDate: ' + activeMail.value.receivedAt + '\nSubject: ' + activeMail.value.subject + '\n\n',
+                        isHtml: false
+                    };
+                };
+
+                const formatTime = (timeStr) => {
+                    try {
+                        const date = new Date(timeStr.replace(' ', 'T'));
+                        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    } catch(e) {
+                        return '';
+                    }
+                };
+
+                const parseSenderName = (sender) => {
+                    if (sender.includes('<')) {
+                        return sender.substring(0, sender.indexOf('<')).trim().replace(/"/g, '');
+                    }
+                    return sender;
+                };
+
+                const stripHtml = (html) => {
+                    if (!html) return '';
+                    let doc = new DOMParser().parseFromString(html, 'text/html');
+                    return doc.body.textContent || "";
+                };
+
+                const getSafeHtmlContent = (mail) => {
+                    if (!mail.body) return '';
+                    if (!mail.isHtml) {
+                        const text = mail.body.replace(/&/g, '&amp;')
+                                             .replace(/</g, '&lt;')
+                                             .replace(/>/g, '&gt;')
+                                             .replace(/"/g, '&quot;')
+                                             .replace(/'/g, '&#039;');
+                        return `<body style="font-family: sans-serif; font-size: 14px; color: #cbd5e1; line-height: 1.5; white-space: pre-wrap; background-color: #0b0f19; padding: 15px;">${text}</body>`;
+                    }
+                    return `
+                        <html>
+                        <head>
+                            <style>
+                                body {
+                                    font-family: sans-serif;
+                                    color: #e2e8f0;
+                                    background-color: #0b0f19;
+                                    padding: 15px;
+                                }
+                                a { color: #818cf8; }
+                            </style>
+                        </head>
+                        <body>
+                            ${mail.body}
+                        </body>
+                        </html>
+                    `;
+                };
+
+                onMounted(async () => {
+                    await fetchDashboardData();
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.get('compose') === 'true') {
+                        openComposeModal();
+                    }
+                });
+
+                return {
+                    mails,
+                    activeMail,
+                    mailboxFolder,
+                    incomingMails,
+                    outgoingMails,
+                    filteredMails,
+                    mailsPerPage,
+                    currentPage,
+                    paginatedMails,
+                    profile,
+                    composeModal,
+                    navDropdownOpen,
+                    fetchDashboardData,
+                    handleLogout,
+                    openComposeModal,
+                    closeComposeModal,
+                    sendOutboundMail,
+                    replyToMail,
+                    formatTime,
+                    parseSenderName,
+                    stripHtml,
+                    getSafeHtmlContent
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "id": "retromail",
+  "name": "RetroMail",
+  "version": "1.0.0",
+  "description": "Allows players to subscribe to real-life newsletters and receive offline mail notifications via SMTP.",
+  "authors": [
+    "Retro"
+  ],
+  "main": "dev.retro.papersmtp.velocity.VelocityPaperSMTP"
+}

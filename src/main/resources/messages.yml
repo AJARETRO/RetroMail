@@ -1,0 +1,40 @@
+# RetroMail Messages Configuration (Supports color codes using &)
+
+cooldown-message: "&c[RetroMail] Please wait {time} seconds before requesting another email."
+enter-email-prompt: "&e[RetroMail] Please type your email address in chat. Type &c'cancel' &eto abort."
+enter-code-prompt: "&e[RetroMail] Please type the verification code sent to your email. Type &c'cancel' &eto abort."
+cancelled-action: "&c[RetroMail] Cancelled."
+invalid-email: "&c[RetroMail] Invalid email format. Please try again by typing &e/email&c."
+verification-sent: "&a[RetroMail] Verification code sent to &b{email}&a. Please check your inbox and type &e/email &ato enter the code."
+verification-success: "&a&l[RetroMail] Verification successful! You are now subscribed."
+incorrect-code: "&c[RetroMail] Incorrect code. Please reopen the menu with &e/email &cto try again."
+unsubscribe-success: "&c[RetroMail] You have been unsubscribed from newsletters."
+reset-success: "&c[RetroMail] Verification cancelled and reset."
+
+gui:
+  title: "&0Email Settings"
+  glass-pane: " "
+  developer:
+    name: "&d&lDeveloper Profile"
+    lore:
+      - "&7Created by &bAJA_RETRO"
+      - "&7Click to display Modrinth Profile"
+  subscribe:
+    name: "&a&lSubscribe to Newsletters"
+    lore:
+      - "&7Click to link your email address and"
+      - "&7receive real-life notifications, updates,"
+      - "&7and earn exclusive server rewards!"
+  verification-pending:
+    name: "&e&lVerification Pending"
+    lore:
+      - "&7A code was sent to: &b{email}"
+      - "&7Left-Click to enter code."
+      - "&7Right-Click to reset/cancel."
+  subscribed:
+    name: "&a&lSubscribed"
+    lore:
+      - "&7Linked email: &b{email}"
+      - "&7Status: &a&lVERIFIED"
+      - "&7"
+      - "&7Right-Click to unsubscribe."

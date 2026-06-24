@@ -1,0 +1,23 @@
+name: RetroMail
+version: 1.0.0
+main: dev.retro.papersmtp.PaperSMTP
+api-version: 1.20
+description: A plugin that allows players to subscribe to real-life newsletters and verify their emails in-game.
+author: Retro
+softdepend: [PlaceholderAPI]
+commands:
+  email:
+    description: Opens the email subscription GUI, verifies emails, or sends mass mails.
+    usage: /email [menu/verify/mass]
+    permission: smtp.user.use
+  mass-email:
+    description: Sends an HTML template file as a mass email newsletter.
+    usage: /mass-email <file> [subject...]
+    permission: smtp.admin.massmail
+permissions:
+  smtp.user.use:
+    description: Allows players to subscribe and verify emails.
+    default: true
+  smtp.admin.massmail:
+    description: Allows administrators to send mass newsletters.
+    default: op
