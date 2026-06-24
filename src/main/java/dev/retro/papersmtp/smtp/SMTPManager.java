@@ -40,6 +40,15 @@ public class SMTPManager {
     public void startQueueProcessor() {
         // Run retry processor every 60 seconds
         scheduler.scheduleWithFixedDelay(this::processOutboundQueue, 15, 60, java.util.concurrent.TimeUnit.SECONDS);
+
+        // Run database mail log pruning task every 24 hours (starting 30 seconds after boot)
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+                plugin.getDatabaseManager().pruneOldMails();
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.WARNING, "Failed to run scheduled email log pruning: " + e.getMessage());
+            }
+        }, 30, 86400, java.util.concurrent.TimeUnit.SECONDS);
     }
 
     public void shutdown() {
@@ -217,6 +226,14 @@ public class SMTPManager {
         props.put("mail.smtp.port", String.valueOf(config.smtpPort));
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3");
+        
+        // Strict connection, read, and write timeouts to prevent hanging threads
+        props.put("mail.smtp.connectiontimeout", "5000"); // 5 seconds
+        props.put("mail.smtp.timeout", "5000");           // 5 seconds
+        props.put("mail.smtp.writetimeout", "5000");      // 5 seconds
+        props.put("mail.smtps.connectiontimeout", "5000"); // 5 seconds
+        props.put("mail.smtps.timeout", "5000");           // 5 seconds
+        props.put("mail.smtps.writetimeout", "5000");      // 5 seconds
         
         if (config.smtpStarttls) {
             props.put("mail.smtp.starttls.enable", "true");

@@ -61,6 +61,12 @@ public class IMAPListener {
         properties.put("mail.imap.host", config.imapHost);
         properties.put("mail.imap.port", String.valueOf(config.imapPort));
 
+        // Strict connection and read timeouts to prevent hanging threads
+        properties.put("mail.imap.connectiontimeout", "5000"); // 5 seconds
+        properties.put("mail.imap.timeout", "5000");           // 5 seconds
+        properties.put("mail.imaps.connectiontimeout", "5000"); // 5 seconds
+        properties.put("mail.imaps.timeout", "5000");           // 5 seconds
+
         Session session = Session.getDefaultInstance(properties, null);
         Store store = session.getStore(config.imapSsl ? "imaps" : "imap");
         store.connect(config.imapHost, config.imapUsername, config.imapPassword);

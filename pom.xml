@@ -5,7 +5,7 @@
 
     <groupId>dev.retro</groupId>
     <artifactId>papersmtp</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
     <packaging>jar</packaging>
 
     <name>PaperSMTP</name>
@@ -88,6 +88,12 @@
             <artifactId>mysql-connector-j</artifactId>
             <version>8.0.33</version>
         </dependency>
+        <!-- HikariCP -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>4.0.3</version>
+        </dependency>
         <!-- bStats Bukkit -->
         <dependency>
             <groupId>org.bstats</groupId>
@@ -131,6 +137,10 @@
                                 <relocation>
                                     <pattern>org.bstats</pattern>
                                     <shadedPattern>dev.retro.papersmtp.bstats</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.zaxxer.hikari</pattern>
+                                    <shadedPattern>dev.retro.papersmtp.hikari</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

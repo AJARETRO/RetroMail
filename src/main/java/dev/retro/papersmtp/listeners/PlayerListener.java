@@ -124,6 +124,20 @@ public class PlayerListener implements Listener {
                 SubscriptionState state = plugin.getDatabaseManager().getSubscriptionState(player.getUniqueId());
                 dev.retro.papersmtp.compatibility.SchedulerUtil.runForPlayer(plugin, player, () -> {
                     if (state.getType() == SubscriptionState.Type.NONE) {
+                        // Check cooldown before prompting for email address input
+                        long now = System.currentTimeMillis();
+                        if (plugin.getEmailCooldowns().containsKey(player.getUniqueId())) {
+                            long nextAllowed = plugin.getEmailCooldowns().get(player.getUniqueId());
+                            if (now < nextAllowed) {
+                                int remaining = (int) Math.ceil((nextAllowed - now) / 1000.0);
+                                String cooldownMsg = plugin.getPluginConfig().getMessage("cooldown-message", "&c[RetroMail] Please wait {time} seconds before requesting another email.")
+                                        .replace("{time}", String.valueOf(remaining));
+                                player.sendMessage(cooldownMsg);
+                                CompatibilityUtil.playSound(player, "BLOCK_NOTE_BLOCK_BASS", "NOTE_BASS");
+                                return;
+                            }
+                        }
+
                         plugin.getPendingEmailInputs().put(player.getUniqueId(), true);
                         String msg = plugin.getPluginConfig().getMessage("enter-email-prompt", "&e[RetroMail] Please type your email address in chat. Type &c'cancel' &eto abort.");
                         player.sendMessage(msg);
@@ -197,15 +211,15 @@ public class PlayerListener implements Listener {
                 }
             }
 
+            // Apply Cooldown synchronously immediately to prevent spam/concurrency bypasses
+            plugin.getEmailCooldowns().put(uuid, now + (plugin.getPluginConfig().emailCooldown * 1000L));
+
             // Set verification code and send email asynchronously
             String code = String.format("%06d", new Random().nextInt(999999));
             dev.retro.papersmtp.compatibility.SchedulerUtil.runAsync(plugin, () -> {
                 plugin.getDatabaseManager().setPendingSubscription(uuid, message, code);
                 plugin.broadcastSyncMessage("pending", uuid.toString(), message + ":" + code);
                 plugin.getSMTPManager().sendVerificationEmailAsync(message, uuid, code);
-                
-                // Apply Cooldown
-                plugin.getEmailCooldowns().put(uuid, now + (plugin.getPluginConfig().emailCooldown * 1000L));
 
                 dev.retro.papersmtp.compatibility.SchedulerUtil.runForPlayer(plugin, player, () -> {
                     String verificationSentMsg = plugin.getPluginConfig().getMessage("verification-sent", "&a[RetroMail] Verification code sent to &b{email}&a. Please check your inbox and type &e/email &ato enter the code.")

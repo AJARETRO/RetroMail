@@ -2,10 +2,11 @@ package dev.retro.papersmtp.database;
 
 import dev.retro.papersmtp.MailPluginInterface;
 import dev.retro.papersmtp.config.PluginConfig;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import java.io.File;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -17,7 +18,7 @@ import java.util.logging.Level;
 
 public class DatabaseManager {
     private final MailPluginInterface plugin;
-    private Connection connection;
+    private HikariDataSource dataSource;
 
     public DatabaseManager(MailPluginInterface plugin) {
         this.plugin = plugin;
@@ -26,24 +27,47 @@ public class DatabaseManager {
     public synchronized void setup() {
         PluginConfig config = plugin.getPluginConfig();
         try {
-            if (connection != null && !connection.isClosed()) {
-                connection.close();
+            if (dataSource != null && !dataSource.isClosed()) {
+                dataSource.close();
             }
+            
+            HikariConfig hikariConfig = new HikariConfig();
             
             if (config.dbType.equalsIgnoreCase("sqlite")) {
                 File dbFile = new File(plugin.getDataFolder(), config.sqliteFile);
                 if (!plugin.getDataFolder().exists()) {
                     plugin.getDataFolder().mkdirs();
                 }
-                Class.forName("org.sqlite.JDBC");
-                connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile.getAbsolutePath());
-                plugin.getLogger().info("Connected to local SQLite database successfully.");
+                hikariConfig.setDriverClassName("org.sqlite.JDBC");
+                hikariConfig.setJdbcUrl("jdbc:sqlite:" + dbFile.getAbsolutePath());
+                // SQLite works best with a single connection in the pool to prevent database locking errors
+                hikariConfig.setMaximumPoolSize(1);
+                hikariConfig.setPoolName("PaperSMTPSQLitePool");
+                hikariConfig.setConnectionTimeout(10000);
             } else {
-                Class.forName("com.mysql.cj.jdbc.Driver");
+                hikariConfig.setDriverClassName("com.mysql.cj.jdbc.Driver");
                 String url = "jdbc:mysql://" + config.mysqlHost + ":" + config.mysqlPort + "/" + config.mysqlDatabase + "?useSSL=false&allowPublicKeyRetrieval=true&autoReconnect=true";
-                connection = DriverManager.getConnection(url, config.mysqlUsername, config.mysqlPassword);
-                plugin.getLogger().info("Connected to remote MySQL database successfully.");
+                hikariConfig.setJdbcUrl(url);
+                hikariConfig.setUsername(config.mysqlUsername);
+                hikariConfig.setPassword(config.mysqlPassword);
+                
+                // HikariCP connection pool parameters for MySQL
+                hikariConfig.setMaximumPoolSize(10);
+                hikariConfig.setMinimumIdle(2);
+                hikariConfig.setIdleTimeout(300000); // 5 minutes
+                hikariConfig.setMaxLifetime(600000); // 10 minutes
+                hikariConfig.setConnectionTimeout(5000); // 5 seconds
+                hikariConfig.setPoolName("PaperSMTPMySQLPool");
+                
+                // MySQL database optimization properties
+                hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
+                hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
+                hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+                hikariConfig.addDataSourceProperty("useServerPrepStmts", "true");
             }
+
+            dataSource = new HikariDataSource(hikariConfig);
+            plugin.getLogger().info("Connected to " + config.dbType + " database via HikariCP successfully.");
 
             createTable();
         } catch (Exception e) {
@@ -51,34 +75,19 @@ public class DatabaseManager {
         }
     }
 
-    private synchronized Connection getConnection() throws SQLException {
-        boolean valid = false;
-        try {
-            if (connection != null && !connection.isClosed()) {
-                valid = connection.isValid(2);
-            }
-        } catch (Exception e) {
-            if (connection != null) {
-                try (Statement s = connection.createStatement()) {
-                    s.execute("SELECT 1;");
-                    valid = true;
-                } catch (Exception ignored) {}
-            }
-        }
-
-        if (!valid) {
+    private Connection getConnection() throws SQLException {
+        if (dataSource == null || dataSource.isClosed()) {
             setup();
         }
-        return connection;
+        if (dataSource == null) {
+            throw new SQLException("DataSource is not initialized");
+        }
+        return dataSource.getConnection();
     }
 
     public synchronized void close() {
-        try {
-            if (connection != null && !connection.isClosed()) {
-                connection.close();
-            }
-        } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Failed to close database connection: " + e.getMessage());
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
         }
     }
 
@@ -146,51 +155,49 @@ public class DatabaseManager {
                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
                 ");";
 
-        try {
-            Connection conn = getConnection();
-            try (Statement statement = conn.createStatement()) {
-                statement.execute(query);
-                statement.execute(staffTable);
-                statement.execute(permTable);
-                statement.execute(filterTable);
-                statement.execute(mailsTable);
-                statement.execute(tokensTable);
-                statement.execute(sessionsTable);
+        try (Connection conn = getConnection();
+             Statement statement = conn.createStatement()) {
+            statement.execute(query);
+            statement.execute(staffTable);
+            statement.execute(permTable);
+            statement.execute(filterTable);
+            statement.execute(mailsTable);
+            statement.execute(tokensTable);
+            statement.execute(sessionsTable);
 
-                String outboundQueueTable = "CREATE TABLE IF NOT EXISTS papersmtp_outbound_queue (" +
-                        "id " + autoIncrement + ", " +
-                        "mail_from VARCHAR(255) NOT NULL, " +
-                        "from_name VARCHAR(255) NOT NULL, " +
-                        "mail_to VARCHAR(255) NOT NULL, " +
-                        "subject VARCHAR(255) NOT NULL, " +
-                        "body TEXT NOT NULL, " +
-                        "is_html TINYINT DEFAULT 0, " +
-                        "retries INTEGER DEFAULT 0, " +
-                        "next_retry_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                        "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
-                        ");";
-                statement.execute(outboundQueueTable);
+            String outboundQueueTable = "CREATE TABLE IF NOT EXISTS papersmtp_outbound_queue (" +
+                    "id " + autoIncrement + ", " +
+                    "mail_from VARCHAR(255) NOT NULL, " +
+                    "from_name VARCHAR(255) NOT NULL, " +
+                    "mail_to VARCHAR(255) NOT NULL, " +
+                    "subject VARCHAR(255) NOT NULL, " +
+                    "body TEXT NOT NULL, " +
+                    "is_html TINYINT DEFAULT 0, " +
+                    "retries INTEGER DEFAULT 0, " +
+                    "next_retry_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ");";
+            statement.execute(outboundQueueTable);
 
-                // Run migration to add columns if they do not exist
-                try {
-                    statement.execute("ALTER TABLE papersmtp_api_tokens ADD COLUMN permissions VARCHAR(255) DEFAULT 'read_mails,send_mails';");
-                } catch (Exception ignored) {}
-                try {
-                    statement.execute("ALTER TABLE papersmtp_subscriptions ADD COLUMN news_enabled TINYINT DEFAULT 1;");
-                } catch (Exception ignored) {}
-                try {
-                    statement.execute("ALTER TABLE papersmtp_subscriptions ADD COLUMN surveys_enabled TINYINT DEFAULT 1;");
-                } catch (Exception ignored) {}
-                try {
-                    statement.execute("ALTER TABLE papersmtp_subscriptions ADD COLUMN sales_enabled TINYINT DEFAULT 1;");
-                } catch (Exception ignored) {}
-            }
+            // Run migration to add columns if they do not exist
+            try {
+                statement.execute("ALTER TABLE papersmtp_api_tokens ADD COLUMN permissions VARCHAR(255) DEFAULT 'read_mails,send_mails';");
+            } catch (Exception ignored) {}
+            try {
+                statement.execute("ALTER TABLE papersmtp_subscriptions ADD COLUMN news_enabled TINYINT DEFAULT 1;");
+            } catch (Exception ignored) {}
+            try {
+                statement.execute("ALTER TABLE papersmtp_subscriptions ADD COLUMN surveys_enabled TINYINT DEFAULT 1;");
+            } catch (Exception ignored) {}
+            try {
+                statement.execute("ALTER TABLE papersmtp_subscriptions ADD COLUMN sales_enabled TINYINT DEFAULT 1;");
+            } catch (Exception ignored) {}
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to create database tables: " + e.getMessage(), e);
         }
     }
 
-    public synchronized void setPendingSubscription(UUID uuid, String email, String verificationCode) {
+    public void setPendingSubscription(UUID uuid, String email, String verificationCode) {
         String query = "INSERT INTO papersmtp_subscriptions (uuid, email, verified, verification_code, updated_at) " +
                 "VALUES (?, ?, 0, ?, CURRENT_TIMESTAMP) " +
                 "ON DUPLICATE KEY UPDATE email = ?, verified = 0, verification_code = ?, updated_at = CURRENT_TIMESTAMP;";
@@ -200,22 +207,8 @@ public class DatabaseManager {
                     "VALUES (?, ?, 0, ?, CURRENT_TIMESTAMP);";
         }
 
-        try {
-            executeSetPending(query, uuid, email, verificationCode);
-        } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Database write failed, reconnecting and retrying: " + e.getMessage());
-            setup();
-            try {
-                executeSetPending(query, uuid, email, verificationCode);
-            } catch (SQLException ex) {
-                plugin.getLogger().log(Level.SEVERE, "Failed to save pending subscription on retry: " + ex.getMessage(), ex);
-            }
-        }
-    }
-
-    private void executeSetPending(String query, UUID uuid, String email, String verificationCode) throws SQLException {
-        Connection conn = getConnection();
-        try (PreparedStatement statement = conn.prepareStatement(query)) {
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(query)) {
             statement.setString(1, uuid.toString());
             statement.setString(2, email);
             statement.setString(3, verificationCode);
@@ -224,28 +217,15 @@ public class DatabaseManager {
                 statement.setString(5, verificationCode);
             }
             statement.executeUpdate();
-        }
-    }
-
-    public synchronized boolean verifySubscription(UUID uuid, String code) {
-        try {
-            return executeVerify(uuid, code);
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Database verify query failed, reconnecting and retrying: " + e.getMessage());
-            setup();
-            try {
-                return executeVerify(uuid, code);
-            } catch (SQLException ex) {
-                plugin.getLogger().log(Level.SEVERE, "Failed to verify subscription on retry: " + ex.getMessage(), ex);
-                return false;
-            }
+            plugin.getLogger().log(Level.SEVERE, "Failed to save pending subscription: " + e.getMessage(), e);
         }
     }
 
-    private boolean executeVerify(UUID uuid, String code) throws SQLException {
+    public boolean verifySubscription(UUID uuid, String code) {
         String selectQuery = "SELECT verification_code FROM papersmtp_subscriptions WHERE uuid = ?;";
-        Connection conn = getConnection();
-        try (PreparedStatement statement = conn.prepareStatement(selectQuery)) {
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(selectQuery)) {
             statement.setString(1, uuid.toString());
             try (ResultSet rs = statement.executeQuery()) {
                 if (rs.next()) {
@@ -260,52 +240,34 @@ public class DatabaseManager {
                     }
                 }
             }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to verify subscription: " + e.getMessage(), e);
         }
         return false;
     }
 
-    public synchronized void unsubscribe(UUID uuid) {
-        String query = "DELETE FROM papersmtp_subscriptions WHERE uuid = ?;";
-        try {
-            executeUnsubscribe(query, uuid);
-        } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Database delete query failed, reconnecting and retrying: " + e.getMessage());
-            setup();
-            try {
-                executeUnsubscribe(query, uuid);
-            } catch (SQLException ex) {
-                plugin.getLogger().log(Level.SEVERE, "Failed to unsubscribe on retry: " + ex.getMessage(), ex);
-            }
-        }
-    }
+    public void unsubscribe(UUID uuid) {
+        SubscriptionState state = getSubscriptionState(uuid);
+        String email = (state != null) ? state.getEmail() : null;
 
-    private void executeUnsubscribe(String query, UUID uuid) throws SQLException {
-        Connection conn = getConnection();
-        try (PreparedStatement statement = conn.prepareStatement(query)) {
+        String query = "DELETE FROM papersmtp_subscriptions WHERE uuid = ?;";
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(query)) {
             statement.setString(1, uuid.toString());
             statement.executeUpdate();
-        }
-    }
-
-    public synchronized SubscriptionState getSubscriptionState(UUID uuid) {
-        try {
-            return executeGetState(uuid);
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Database state query failed, reconnecting and retrying: " + e.getMessage());
-            setup();
-            try {
-                return executeGetState(uuid);
-            } catch (SQLException ex) {
-                plugin.getLogger().log(Level.SEVERE, "Failed to query subscription state on retry: " + ex.getMessage(), ex);
-                return new SubscriptionState(SubscriptionState.Type.NONE, null, null, true, true, true);
-            }
+            plugin.getLogger().log(Level.SEVERE, "Failed to unsubscribe: " + e.getMessage(), e);
+        }
+
+        if (email != null && !email.isEmpty()) {
+            purgeMailLogsByEmail(email);
         }
     }
 
-    private SubscriptionState executeGetState(UUID uuid) throws SQLException {
+    public SubscriptionState getSubscriptionState(UUID uuid) {
         String query = "SELECT verified, email, verification_code, news_enabled, surveys_enabled, sales_enabled FROM papersmtp_subscriptions WHERE uuid = ?;";
-        Connection conn = getConnection();
-        try (PreparedStatement statement = conn.prepareStatement(query)) {
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(query)) {
             statement.setString(1, uuid.toString());
             try (ResultSet rs = statement.executeQuery()) {
                 if (rs.next()) {
@@ -322,39 +284,28 @@ public class DatabaseManager {
                     }
                 }
             }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to query subscription state: " + e.getMessage(), e);
         }
         return new SubscriptionState(SubscriptionState.Type.NONE, null, null, true, true, true);
     }
 
-    public synchronized List<String> getSubscribedEmails() {
-        try {
-            return executeGetSubscribedEmails();
-        } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Database emails query failed, reconnecting and retrying: " + e.getMessage());
-            setup();
-            try {
-                return executeGetSubscribedEmails();
-            } catch (SQLException ex) {
-                plugin.getLogger().log(Level.SEVERE, "Failed to query subscribed emails on retry: " + ex.getMessage(), ex);
-                return new ArrayList<>();
-            }
-        }
-    }
-
-    private List<String> executeGetSubscribedEmails() throws SQLException {
+    public List<String> getSubscribedEmails() {
         List<String> emails = new ArrayList<>();
         String query = "SELECT email FROM papersmtp_subscriptions WHERE verified = 1;";
-        Connection conn = getConnection();
-        try (Statement statement = conn.createStatement();
+        try (Connection conn = getConnection();
+             Statement statement = conn.createStatement();
              ResultSet rs = statement.executeQuery(query)) {
             while (rs.next()) {
                 emails.add(rs.getString("email"));
             }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to query subscribed emails: " + e.getMessage(), e);
         }
         return emails;
     }
 
-    public synchronized void verifySubscriptionLocally(UUID uuid, String email) {
+    public void verifySubscriptionLocally(UUID uuid, String email) {
         String query = "INSERT INTO papersmtp_subscriptions (uuid, email, verified, verification_code, updated_at) " +
                 "VALUES (?, ?, 1, NULL, CURRENT_TIMESTAMP) " +
                 "ON DUPLICATE KEY UPDATE email = ?, verified = 1, verification_code = NULL, updated_at = CURRENT_TIMESTAMP;";
@@ -364,74 +315,42 @@ public class DatabaseManager {
                     "VALUES (?, ?, 1, NULL, CURRENT_TIMESTAMP);";
         }
 
-        try {
-            executeVerifyLocally(query, uuid, email);
-        } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Database local verify failed, reconnecting and retrying: " + e.getMessage());
-            setup();
-            try {
-                executeVerifyLocally(query, uuid, email);
-            } catch (SQLException ex) {
-                plugin.getLogger().log(Level.SEVERE, "Failed to locally verify subscription on retry: " + ex.getMessage(), ex);
-            }
-        }
-    }
-
-    private void executeVerifyLocally(String query, UUID uuid, String email) throws SQLException {
-        Connection conn = getConnection();
-        try (PreparedStatement statement = conn.prepareStatement(query)) {
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(query)) {
             statement.setString(1, uuid.toString());
             statement.setString(2, email);
             if (!plugin.getPluginConfig().dbType.equalsIgnoreCase("sqlite")) {
                 statement.setString(3, email);
             }
             statement.executeUpdate();
-        }
-    }
-
-    public synchronized void unsubscribeLocally(UUID uuid) {
-        String query = "DELETE FROM papersmtp_subscriptions WHERE uuid = ?;";
-        try {
-            executeUnsubscribeLocally(query, uuid);
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Database local unsubscribe failed, reconnecting and retrying: " + e.getMessage());
-            setup();
-            try {
-                executeUnsubscribeLocally(query, uuid);
-            } catch (SQLException ex) {
-                plugin.getLogger().log(Level.SEVERE, "Failed to locally unsubscribe on retry: " + ex.getMessage(), ex);
-            }
+            plugin.getLogger().log(Level.SEVERE, "Failed to locally verify subscription: " + e.getMessage(), e);
         }
     }
 
-    private void executeUnsubscribeLocally(String query, UUID uuid) throws SQLException {
-        Connection conn = getConnection();
-        try (PreparedStatement statement = conn.prepareStatement(query)) {
+    public void unsubscribeLocally(UUID uuid) {
+        SubscriptionState state = getSubscriptionState(uuid);
+        String email = (state != null) ? state.getEmail() : null;
+
+        String query = "DELETE FROM papersmtp_subscriptions WHERE uuid = ?;";
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(query)) {
             statement.setString(1, uuid.toString());
             statement.executeUpdate();
-        }
-    }
-
-    public synchronized List<Subscriber> getVerifiedSubscribers() {
-        try {
-            return executeGetVerifiedSubscribers();
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Database verified subscribers query failed, reconnecting and retrying: " + e.getMessage());
-            setup();
-            try {
-                return executeGetVerifiedSubscribers();
-            } catch (SQLException ex) {
-                plugin.getLogger().log(Level.SEVERE, "Failed to query verified subscribers on retry: " + ex.getMessage(), ex);
-                return new ArrayList<>();
-            }
+            plugin.getLogger().log(Level.SEVERE, "Failed to locally unsubscribe: " + e.getMessage(), e);
+        }
+
+        if (email != null && !email.isEmpty()) {
+            purgeMailLogsByEmail(email);
         }
     }
 
-    private List<Subscriber> executeGetVerifiedSubscribers() throws SQLException {
+    public List<Subscriber> getVerifiedSubscribers() {
         List<Subscriber> list = new ArrayList<>();
         String query = "SELECT uuid, email FROM papersmtp_subscriptions WHERE verified = 1;";
-        Connection conn = getConnection();
-        try (Statement statement = conn.createStatement();
+        try (Connection conn = getConnection();
+             Statement statement = conn.createStatement();
              ResultSet rs = statement.executeQuery(query)) {
             while (rs.next()) {
                 String uuidStr = rs.getString("uuid");
@@ -440,6 +359,8 @@ public class DatabaseManager {
                     list.add(new Subscriber(UUID.fromString(uuidStr), email));
                 } catch (Exception ignored) {}
             }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to query verified subscribers: " + e.getMessage(), e);
         }
         return list;
     }
@@ -456,7 +377,7 @@ public class DatabaseManager {
 
     // --- STAFF DASHBOARD MODULE DATABASE HELPERS ---
 
-    public synchronized boolean createStaffAccount(String username, String email, String passwordHash, String salt, String role) {
+    public boolean createStaffAccount(String username, String email, String passwordHash, String salt, String role) {
         String query = "INSERT INTO papersmtp_staff (username, email, password_hash, salt, role) VALUES (?, ?, ?, ?, ?);";
         try (Connection conn = getConnection();
              PreparedStatement statement = conn.prepareStatement(query)) {
@@ -473,7 +394,7 @@ public class DatabaseManager {
         }
     }
 
-    public synchronized StaffAccount getStaffAccount(String username) {
+    public StaffAccount getStaffAccount(String username) {
         String query = "SELECT id, username, email, password_hash, salt, role, temp_password, totp_secret, totp_enabled, avatar_path FROM papersmtp_staff WHERE username = ?;";
         try (Connection conn = getConnection();
              PreparedStatement statement = conn.prepareStatement(query)) {
@@ -500,7 +421,7 @@ public class DatabaseManager {
         return null;
     }
 
-    public synchronized boolean updateStaffPassword(int id, String newPasswordHash, String salt) {
+    public boolean updateStaffPassword(int id, String newPasswordHash, String salt) {
         String query = "UPDATE papersmtp_staff SET password_hash = ?, salt = ?, temp_password = 0 WHERE id = ?;";
         try (Connection conn = getConnection();
              PreparedStatement statement = conn.prepareStatement(query)) {
@@ -515,7 +436,7 @@ public class DatabaseManager {
         }
     }
 
-    public synchronized boolean updateStaff2FA(int id, String secret, boolean enabled) {
+    public boolean updateStaff2FA(int id, String secret, boolean enabled) {
         String query = "UPDATE papersmtp_staff SET totp_secret = ?, totp_enabled = ? WHERE id = ?;";
         try (Connection conn = getConnection();
              PreparedStatement statement = conn.prepareStatement(query)) {
@@ -530,7 +451,7 @@ public class DatabaseManager {
         }
     }
 
-    public synchronized boolean updateStaffAvatar(int id, String path) {
+    public boolean updateStaffAvatar(int id, String path) {
         String query = "UPDATE papersmtp_staff SET avatar_path = ? WHERE id = ?;";
         try (Connection conn = getConnection();
              PreparedStatement statement = conn.prepareStatement(query)) {
@@ -544,7 +465,7 @@ public class DatabaseManager {
         }
     }
 
-    public synchronized boolean updateStaffRole(int id, String role) {
+    public boolean updateStaffRole(int id, String role) {
         String query = "UPDATE papersmtp_staff SET role = ? WHERE id = ?;";
         try (Connection conn = getConnection();
              PreparedStatement statement = conn.prepareStatement(query)) {
@@ -558,7 +479,7 @@ public class DatabaseManager {
         }
     }
 
-    public synchronized List<StaffAccount> listStaff() {
+    public List<StaffAccount> listStaff() {
         List<StaffAccount> list = new ArrayList<>();
         String query = "SELECT id, username, email, password_hash, salt, role, temp_password, totp_secret, totp_enabled, avatar_path FROM papersmtp_staff ORDER BY username ASC;";
         try (Connection conn = getConnection();
@@ -584,7 +505,7 @@ public class DatabaseManager {
         return list;
     }
 
-    public synchronized boolean deleteStaff(int id) {
+    public boolean deleteStaff(int id) {
         String query = "DELETE FROM papersmtp_staff WHERE id = ?;";
         try (Connection conn = getConnection();
              PreparedStatement statement = conn.prepareStatement(query)) {
@@ -597,7 +518,7 @@ public class DatabaseManager {
         }
     }
 
-    public synchronized void updateStaffPermissions(int staffId, List<String> mailboxes) {
+    public void updateStaffPermissions(int staffId, List<String> mailboxes) {
         String deleteQuery = "DELETE FROM papersmtp_staff_permissions WHERE staff_id = ?;";
         String insertQuery = "INSERT INTO papersmtp_staff_permissions (staff_id, mailbox) VALUES (?, ?);";
         try (Connection conn = getConnection()) {
@@ -626,7 +547,7 @@ public class DatabaseManager {
         }
     }
 
-    public synchronized List<String> getStaffPermissions(int staffId) {
+    public List<String> getStaffPermissions(int staffId) {
         List<String> list = new ArrayList<>();
         String query = "SELECT mailbox FROM papersmtp_staff_permissions WHERE staff_id = ?;";
         try (Connection conn = getConnection();
@@ -643,7 +564,7 @@ public class DatabaseManager {
         return list;
     }
 
-    public synchronized void updateStaffFilters(int staffId, List<SenderFilter> filters) {
+    public void updateStaffFilters(int staffId, List<SenderFilter> filters) {
         String deleteQuery = "DELETE FROM papersmtp_staff_filters WHERE staff_id = ?;";
         String insertQuery = "INSERT INTO papersmtp_staff_filters (staff_id, mailbox, allowed_sender) VALUES (?, ?, ?);";
         try (Connection conn = getConnection()) {
@@ -673,7 +594,7 @@ public class DatabaseManager {
         }
     }
 
-    public synchronized List<SenderFilter> getStaffFilters(int staffId) {
+    public List<SenderFilter> getStaffFilters(int staffId) {
         List<SenderFilter> list = new ArrayList<>();
         String query = "SELECT mailbox, allowed_sender FROM papersmtp_staff_filters WHERE staff_id = ?;";
         try (Connection conn = getConnection();
@@ -690,7 +611,7 @@ public class DatabaseManager {
         return list;
     }
 
-    public synchronized void saveIncomingMail(String mailFrom, String mailTo, String subject, String body, boolean isHtml) {
+    public void saveIncomingMail(String mailFrom, String mailTo, String subject, String body, boolean isHtml) {
         String query = "INSERT INTO papersmtp_mails (mail_from, mail_to, subject, body, is_html) VALUES (?, ?, ?, ?, ?);";
         try (Connection conn = getConnection();
              PreparedStatement statement = conn.prepareStatement(query)) {
@@ -705,7 +626,7 @@ public class DatabaseManager {
         }
     }
 
-    public synchronized List<StoredMail> getMailsForStaff(StaffAccount staff, String domain) {
+    public List<StoredMail> getMailsForStaff(StaffAccount staff, String domain) {
         List<StoredMail> list = new ArrayList<>();
 
         // Build the list of allowed mailboxes
@@ -860,7 +781,7 @@ public class DatabaseManager {
         }
     }
 
-    public synchronized List<StoredMail> getConversation(String email1, String email2) {
+    public List<StoredMail> getConversation(String email1, String email2) {
         List<StoredMail> list = new ArrayList<>();
         String clean1 = extractEmailAddress(email1).toLowerCase();
         String clean2 = extractEmailAddress(email2).toLowerCase();
@@ -914,7 +835,7 @@ public class DatabaseManager {
         }
     }
 
-    public synchronized boolean saveApiToken(int staffId, String token, String name, String permissions) {
+    public boolean saveApiToken(int staffId, String token, String name, String permissions) {
         String query = "INSERT INTO papersmtp_api_tokens (staff_id, token, name, permissions) VALUES (?, ?, ?, ?);";
         try (Connection conn = getConnection();
              PreparedStatement statement = conn.prepareStatement(query)) {
@@ -930,7 +851,7 @@ public class DatabaseManager {
         }
     }
 
-    public synchronized List<ApiToken> getApiTokens(int staffId) {
+    public List<ApiToken> getApiTokens(int staffId) {
         List<ApiToken> list = new ArrayList<>();
         String query = "SELECT id, token, name, permissions, created_at FROM papersmtp_api_tokens WHERE staff_id = ? ORDER BY id DESC;";
         try (Connection conn = getConnection();
@@ -954,7 +875,7 @@ public class DatabaseManager {
         return list;
     }
 
-    public synchronized String getTokenPermissions(String token) {
+    public String getTokenPermissions(String token) {
         String query = "SELECT permissions FROM papersmtp_api_tokens WHERE token = ?;";
         try (Connection conn = getConnection();
              PreparedStatement statement = conn.prepareStatement(query)) {
@@ -970,7 +891,7 @@ public class DatabaseManager {
         return null;
     }
 
-    public synchronized boolean deleteApiToken(int staffId, int tokenId) {
+    public boolean deleteApiToken(int staffId, int tokenId) {
         String query = "DELETE FROM papersmtp_api_tokens WHERE staff_id = ? AND id = ?;";
         try (Connection conn = getConnection();
              PreparedStatement statement = conn.prepareStatement(query)) {
@@ -984,7 +905,7 @@ public class DatabaseManager {
         }
     }
 
-    public synchronized StaffAccount getStaffByApiToken(String token) {
+    public StaffAccount getStaffByApiToken(String token) {
         String query = "SELECT s.id, s.username, s.email, s.password_hash, s.salt, s.role, s.temp_password, s.totp_secret, s.totp_enabled, s.avatar_path " +
                 "FROM papersmtp_staff s " +
                 "JOIN papersmtp_api_tokens t ON s.id = t.staff_id " +
@@ -1014,7 +935,7 @@ public class DatabaseManager {
         return null;
     }
 
-    public synchronized void saveSession(String token, String username) {
+    public void saveSession(String token, String username) {
         String query = "INSERT INTO papersmtp_sessions (token, username, created_at) VALUES (?, ?, CURRENT_TIMESTAMP) " +
                 "ON DUPLICATE KEY UPDATE username = VALUES(username), created_at = CURRENT_TIMESTAMP;";
         if (plugin.getPluginConfig().dbType.equalsIgnoreCase("sqlite")) {
@@ -1030,7 +951,7 @@ public class DatabaseManager {
         }
     }
 
-    public synchronized String getSessionUsername(String token) {
+    public String getSessionUsername(String token) {
         String query = "SELECT username FROM papersmtp_sessions WHERE token = ?;";
         try (Connection conn = getConnection();
              PreparedStatement statement = conn.prepareStatement(query)) {
@@ -1046,7 +967,7 @@ public class DatabaseManager {
         return null;
     }
 
-    public synchronized void deleteSession(String token) {
+    public void deleteSession(String token) {
         String query = "DELETE FROM papersmtp_sessions WHERE token = ?;";
         try (Connection conn = getConnection();
              PreparedStatement statement = conn.prepareStatement(query)) {
@@ -1067,19 +988,17 @@ public class DatabaseManager {
         return email.trim();
     }
 
-    public synchronized void addOutboundMailToQueue(String fromEmail, String fromName, String toEmail, String subject, String body, int isHtml) {
+    public void addOutboundMailToQueue(String fromEmail, String fromName, String toEmail, String subject, String body, int isHtml) {
         String query = "INSERT INTO papersmtp_outbound_queue (mail_from, from_name, mail_to, subject, body, is_html, retries, next_retry_at) VALUES (?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP);";
-        try {
-            Connection conn = getConnection();
-            try (PreparedStatement statement = conn.prepareStatement(query)) {
-                statement.setString(1, fromEmail);
-                statement.setString(2, fromName);
-                statement.setString(3, toEmail);
-                statement.setString(4, subject);
-                statement.setString(5, body);
-                statement.setInt(6, isHtml);
-                statement.executeUpdate();
-            }
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(query)) {
+            statement.setString(1, fromEmail);
+            statement.setString(2, fromName);
+            statement.setString(3, toEmail);
+            statement.setString(4, subject);
+            statement.setString(5, body);
+            statement.setInt(6, isHtml);
+            statement.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to queue outbound email: " + e.getMessage(), e);
         }
@@ -1107,25 +1026,23 @@ public class DatabaseManager {
         }
     }
 
-    public synchronized List<OutboundMail> getPendingOutboundMails() {
+    public List<OutboundMail> getPendingOutboundMails() {
         List<OutboundMail> list = new ArrayList<>();
         String query = "SELECT id, mail_from, from_name, mail_to, subject, body, is_html, retries FROM papersmtp_outbound_queue WHERE next_retry_at <= CURRENT_TIMESTAMP AND retries < 5;";
-        try {
-            Connection conn = getConnection();
-            try (PreparedStatement statement = conn.prepareStatement(query);
-                 ResultSet rs = statement.executeQuery()) {
-                while (rs.next()) {
-                    list.add(new OutboundMail(
-                            rs.getInt("id"),
-                            rs.getString("mail_from"),
-                            rs.getString("from_name"),
-                            rs.getString("mail_to"),
-                            rs.getString("subject"),
-                            rs.getString("body"),
-                            rs.getInt("is_html") == 1,
-                            rs.getInt("retries")
-                    ));
-                }
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(query);
+             ResultSet rs = statement.executeQuery()) {
+            while (rs.next()) {
+                list.add(new OutboundMail(
+                        rs.getInt("id"),
+                        rs.getString("mail_from"),
+                        rs.getString("from_name"),
+                        rs.getString("mail_to"),
+                        rs.getString("subject"),
+                        rs.getString("body"),
+                        rs.getInt("is_html") == 1,
+                        rs.getInt("retries")
+                ));
             }
         } catch (SQLException e) {
             plugin.getLogger().log(Level.WARNING, "Failed to query pending outbound emails: " + e.getMessage());
@@ -1133,7 +1050,7 @@ public class DatabaseManager {
         return list;
     }
 
-    public synchronized void incrementMailRetry(int id, int delaySeconds) {
+    public void incrementMailRetry(int id, int delaySeconds) {
         String updateQuery;
         boolean isSqlite = plugin.getPluginConfig().dbType.equalsIgnoreCase("sqlite");
         if (isSqlite) {
@@ -1141,45 +1058,76 @@ public class DatabaseManager {
         } else {
             updateQuery = "UPDATE papersmtp_outbound_queue SET retries = retries + 1, next_retry_at = DATE_ADD(CURRENT_TIMESTAMP, INTERVAL ? SECOND) WHERE id = ?;";
         }
-        try {
-            Connection conn = getConnection();
-            try (PreparedStatement statement = conn.prepareStatement(updateQuery)) {
-                statement.setInt(1, delaySeconds);
-                statement.setInt(2, id);
-                statement.executeUpdate();
-            }
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(updateQuery)) {
+            statement.setInt(1, delaySeconds);
+            statement.setInt(2, id);
+            statement.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().log(Level.WARNING, "Failed to increment mail retry: " + e.getMessage());
         }
     }
 
-    public synchronized void removeOutboundMail(int id) {
+    public void removeOutboundMail(int id) {
         String query = "DELETE FROM papersmtp_outbound_queue WHERE id = ?;";
-        try {
-            Connection conn = getConnection();
-            try (PreparedStatement statement = conn.prepareStatement(query)) {
-                statement.setInt(1, id);
-                statement.executeUpdate();
-            }
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(query)) {
+            statement.setInt(1, id);
+            statement.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().log(Level.WARNING, "Failed to delete outbound email from queue: " + e.getMessage());
         }
     }
 
-    public synchronized void setSubscriptionPreference(UUID uuid, String column, boolean enabled) {
+    public void setSubscriptionPreference(UUID uuid, String column, boolean enabled) {
         if (!column.equalsIgnoreCase("news_enabled") && !column.equalsIgnoreCase("surveys_enabled") && !column.equalsIgnoreCase("sales_enabled")) {
             return;
         }
         String query = "UPDATE papersmtp_subscriptions SET " + column + " = ? WHERE uuid = ?;";
-        try {
-            Connection conn = getConnection();
-            try (PreparedStatement statement = conn.prepareStatement(query)) {
-                statement.setInt(1, enabled ? 1 : 0);
-                statement.setString(2, uuid.toString());
-                statement.executeUpdate();
-            }
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(query)) {
+            statement.setInt(1, enabled ? 1 : 0);
+            statement.setString(2, uuid.toString());
+            statement.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().log(Level.WARNING, "Failed to update subscription preference: " + e.getMessage());
+        }
+    }
+
+    public void pruneOldMails() {
+        String query;
+        if (plugin.getPluginConfig().dbType.equalsIgnoreCase("sqlite")) {
+            query = "DELETE FROM papersmtp_mails WHERE received_at < datetime('now', '-30 days');";
+        } else {
+            query = "DELETE FROM papersmtp_mails WHERE received_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 30 DAY);";
+        }
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(query)) {
+            int deleted = statement.executeUpdate();
+            if (deleted > 0) {
+                plugin.getLogger().info("Pruned " + deleted + " old email log entry(ies) from the database (retention policy: 30 days).");
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to prune old email logs: " + e.getMessage());
+        }
+    }
+
+    public void purgeMailLogsByEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return;
+        }
+        String cleanEmail = email.toLowerCase().trim();
+        String query = "DELETE FROM papersmtp_mails WHERE LOWER(mail_to) = ? OR LOWER(mail_from) = ?;";
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(query)) {
+            statement.setString(1, cleanEmail);
+            statement.setString(2, cleanEmail);
+            int deleted = statement.executeUpdate();
+            if (deleted > 0) {
+                plugin.getLogger().info("GDPR Compliance: Purged " + deleted + " email log entry(ies) matching address " + cleanEmail);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to purge mail logs for PII compliance: " + e.getMessage());
         }
     }
 }

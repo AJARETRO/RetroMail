@@ -89,7 +89,7 @@ RetroMail is designed to scale with large networks. It utilizes a shared databas
 ## 🔧 Setup & Configuration
 
 ### 1. Installation
-1. Download `papersmtp-1.0.3.jar` from **[Modrinth](https://modrinth.com/plugin/retromail)**.
+1. Download `papersmtp-1.0.4.jar` from **[Modrinth](https://modrinth.com/plugin/retromail)**.
 2. Put the jar file into the `plugins/` directory of your Velocity/Bungee proxy and backend Minecraft servers.
 3. Start the servers to generate default files, then stop them.
 
@@ -318,7 +318,13 @@ RetroMail collects anonymous usage statistics and checks for updates. You can op
 
 ## 🏷️ Release History
 
-### v1.0.3 - Bonefire (Current)
+### v1.0.4 - BloodMoney (Current)
+* **HikariCP Connection Pooling:** Integrated robust SQL connection pooling on MySQL databases (and SQLite pools of size 1) to enable non-blocking concurrent API queries, improving proxy dashboard latency and server stability under heavy load.
+* **IMAP/SMTP Socket Timeout Hardening:** Configured explicit connection and read/write socket timeouts (5 seconds) across all inbound and outbound JavaMail configurations to prevent polling threads from hanging indefinitely during network drops.
+* **GDPR & CCPA PII Scrubbing:** Wiped all email log entries matching a player's address directly upon unsubscription or unlink commands to ensure full PII data privacy compliance.
+* **Auto-Log Pruning:** Added an automated daily database cleanup job to prune sent/received email logs older than 30 days, avoiding HTML-induced database storage bloat.
+
+### v1.0.3 - Bonefire
 * **API Hardening:** Injected strict length limits and character format enforcements across all REST endpoints to protect against malformed data and ensure robust operation.
 * **Directory Traversal Protection:** Hardened the `/email test` console subcommand from path traversal inputs using folder safety blocks.
 * **Client-Side Form Constraints:** Synchronized HTML element inputs (`maxlength`, `minlength`, `pattern`) in all web forms (`index.html`, `inbox.html`, `settings.html`, `admin.html`) to reject invalid inputs early.
