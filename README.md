@@ -55,7 +55,7 @@ RetroMail is designed to scale with large networks. It utilizes a shared databas
 | Aspect | Specification |
 | :--- | :--- |
 | **Supported Loaders** | Paper, Spigot, Folia, Velocity, BungeeCord |
-| **Compatibility Target** | Minecraft 1.20 through 1.21 |
+| **Compatibility Target** | Minecraft 1.8.8 through 26.2 |
 | **Java Requirements** | Java 8 minimum, Java 17+ recommended |
 | **Database Engines** | MySQL, MariaDB, SQLite |
 | **Relay Protocols** | SMTP (Relay) and IMAP (Catch-All Reply Listener) |
