@@ -347,6 +347,7 @@ RetroMail collects anonymous usage statistics and checks for updates. You can op
 
 RetroMail is designed to operate safely inside enterprise network topologies, enforcing rigorous boundaries to shield servers from compromise:
 
+* **Plugin Channel Signature Verification:** Communication payloads between Proxy and backend servers on the `papersmtp:queue` channel are authenticated using a shared secret key via HmacSHA256. All packets include a signed timestamp to prevent replay attacks (validated within a 30-second window), blocking malicious players from spoofing reward dispatches or console commands if backend ports are misconfigured.
 * **Administrative Self-Modification Safeguards:** The web dashboard backend blocks active staff members from deleting their own user account to prevent locking out all administrator paths. Staff members are also blocked from promoting themselves or modifying other administrators' permissions.
 * **REST API Constraint Auditing:** All input payloads sent to the dashboard REST endpoints are validated. Registration usernames must match `^[a-zA-Z0-9_-]{3,16}$` and passwords must be between 6 and 128 characters, protecting system CPU threads from hashing resource-exhaustion attacks.
 * **Directory Traversal Guards:** In-game test subcommands (e.g. `/email test`) validate template file inputs, checking for double dots (`..`), forward slashes (`/`), or backslashes (`\`) to block directory traversal attacks.

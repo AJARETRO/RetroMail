@@ -103,16 +103,32 @@ public class BungeeListener implements Listener {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             DataOutputStream out = new DataOutputStream(stream);
 
-            out.writeUTF("execute");
-            out.writeUTF(player.getUniqueId().toString());
-
             // Build execute payload: id1:command1\nid2:command2\n...
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < pending.size(); i++) {
                 sb.append(pending.get(i).id).append(":").append(pending.get(i).command);
                 if (i < pending.size() - 1) sb.append("\n");
             }
-            out.writeUTF(sb.toString());
+
+            String action = "execute";
+            String uuidStr = player.getUniqueId().toString();
+            String payload = sb.toString();
+            long timestamp = System.currentTimeMillis();
+            String signature = dev.retro.papersmtp.compatibility.SignatureUtil.calculateSignature(
+                    action + ":" + uuidStr + ":" + payload + ":" + timestamp,
+                    plugin.getSecuritySecretToken()
+            );
+
+            // If secret token is set, wrap the payload with security signature and timestamp
+            if (plugin.getSecuritySecretToken() != null && !plugin.getSecuritySecretToken().isEmpty()) {
+                out.writeUTF("secure-msg");
+                out.writeUTF(signature);
+                out.writeLong(timestamp);
+            }
+
+            out.writeUTF(action);
+            out.writeUTF(uuidStr);
+            out.writeUTF(payload);
 
             player.getServer().sendData("papersmtp:queue", stream.toByteArray());
         } catch (Exception e) {

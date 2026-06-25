@@ -73,3 +73,10 @@ branding:
   discord-link: 'https://discord.gg/retro'
   documentation-link: 'https://docs.ajaretro.dev'
   forum-link: 'https://forum.ajaretro.dev'
+
+# Security Settings
+security:
+  # Secret token to secure and authenticate communication between Proxy and backend servers.
+  # Leave empty ("") to disable signature verification (not recommended for production).
+  # Ensure the exact same token is configured across all servers in your network.
+  secret-token: ""

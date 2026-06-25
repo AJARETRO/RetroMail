@@ -285,9 +285,57 @@ public class PaperSMTP extends JavaPlugin implements PluginMessageListener, Mail
     private void handleQueueMessage(byte[] message) {
         try {
             DataInputStream in = new DataInputStream(new ByteArrayInputStream(message));
-            String action = in.readUTF();
-            String uuidStr = in.readUTF();
-            String payload = in.readUTF();
+            String firstUTF = in.readUTF();
+
+            String action;
+            String uuidStr;
+            String payload;
+            boolean isSigned = false;
+            String signature = "";
+            long timestamp = 0;
+
+            if (firstUTF.equals("secure-msg")) {
+                isSigned = true;
+                signature = in.readUTF();
+                timestamp = in.readLong();
+                action = in.readUTF();
+                uuidStr = in.readUTF();
+                payload = in.readUTF();
+            } else {
+                action = firstUTF;
+                uuidStr = in.readUTF();
+                payload = in.readUTF();
+            }
+
+            // Verification Check
+            String secretToken = pluginConfig.securitySecretToken;
+            if (secretToken != null && !secretToken.isEmpty()) {
+                if (!isSigned) {
+                    getLogger().log(Level.WARNING, "Rejected UNSIGNED plugin channel packet on papersmtp:queue. Ensure the proxy also has the security.secret-token set.");
+                    return;
+                }
+                // Calculate expected signature
+                String expectedSig = dev.retro.papersmtp.compatibility.SignatureUtil.calculateSignature(
+                        action + ":" + uuidStr + ":" + payload + ":" + timestamp,
+                        secretToken
+                );
+                if (!expectedSig.equalsIgnoreCase(signature)) {
+                    getLogger().log(Level.WARNING, "Rejected INVALID SIGNATURE plugin channel packet on papersmtp:queue.");
+                    return;
+                }
+                // Prevent replay attacks (allow up to 30 seconds clock drift between servers)
+                long timeDiff = Math.abs(System.currentTimeMillis() - timestamp);
+                if (timeDiff > 30000L) {
+                    getLogger().log(Level.WARNING, "Rejected REPLAYED plugin channel packet on papersmtp:queue (time delta: " + (timeDiff / 1000) + "s).");
+                    return;
+                }
+            } else {
+                if (isSigned) {
+                    getLogger().log(Level.WARNING, "Received signed packet on papersmtp:queue, but security.secret-token is empty. Set the token to enable verification.");
+                } else {
+                    getLogger().log(Level.INFO, "Received unauthenticated command queue execution. Configure 'security.secret-token' in config.yml to authenticate this channel.");
+                }
+            }
 
             UUID uuid = UUID.fromString(uuidStr);
             Player target = Bukkit.getPlayer(uuid);

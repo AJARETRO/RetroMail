@@ -60,6 +60,7 @@ public class PluginConfig {
     public String discordLink;
     public String documentationLink;
     public String forumLink;
+    public String securitySecretToken;
 
     private Map<String, Object> messagesConfig = new HashMap<>();
 
@@ -166,6 +167,7 @@ public class PluginConfig {
         discordLink = getString(config, "branding.discord-link", "https://discord.gg/retro");
         documentationLink = getString(config, "branding.documentation-link", "https://docs.ajaretro.dev");
         forumLink = getString(config, "branding.forum-link", "https://forum.ajaretro.dev");
+        securitySecretToken = getString(config, "security.secret-token", "");
     }
 
     private String getString(Map<String, Object> map, String path, String def) {

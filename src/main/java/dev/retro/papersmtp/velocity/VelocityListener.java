@@ -102,15 +102,31 @@ public class VelocityListener {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             DataOutputStream out = new DataOutputStream(stream);
 
-            out.writeUTF("execute");
-            out.writeUTF(player.getUniqueId().toString());
-
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < pending.size(); i++) {
                 sb.append(pending.get(i).id).append(":").append(pending.get(i).command);
                 if (i < pending.size() - 1) sb.append("\n");
             }
-            out.writeUTF(sb.toString());
+
+            String action = "execute";
+            String uuidStr = player.getUniqueId().toString();
+            String payload = sb.toString();
+            long timestamp = System.currentTimeMillis();
+            String signature = dev.retro.papersmtp.compatibility.SignatureUtil.calculateSignature(
+                    action + ":" + uuidStr + ":" + payload + ":" + timestamp,
+                    plugin.getPluginConfig().securitySecretToken
+            );
+
+            // If secret token is set, wrap the payload with security signature and timestamp
+            if (plugin.getPluginConfig().securitySecretToken != null && !plugin.getPluginConfig().securitySecretToken.isEmpty()) {
+                out.writeUTF("secure-msg");
+                out.writeUTF(signature);
+                out.writeLong(timestamp);
+            }
+
+            out.writeUTF(action);
+            out.writeUTF(uuidStr);
+            out.writeUTF(payload);
 
             serverConn.sendPluginMessage(VelocityPaperSMTP.IDENTIFIER, stream.toByteArray());
         } catch (Exception e) {
