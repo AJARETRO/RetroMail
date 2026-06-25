@@ -316,6 +316,59 @@ RetroMail collects anonymous usage statistics and checks for updates. You can op
 
 ---
 
+## 🔒 Security Hardening & Administrative Protection
+
+RetroMail is designed to operate safely inside enterprise network topologies, enforcing rigorous boundaries to shield servers from compromise:
+
+* **Administrative Self-Modification Safeguards:** The web dashboard backend blocks active staff members from deleting their own user account to prevent locking out all administrator paths. Staff members are also blocked from promoting themselves or modifying other administrators' permissions.
+* **REST API Constraint Auditing:** All input payloads sent to the dashboard REST endpoints are validated. Registration usernames must match `^[a-zA-Z0-9_-]{3,16}$` and passwords must be between 6 and 128 characters, protecting system CPU threads from hashing resource-exhaustion attacks.
+* **Directory Traversal Guards:** In-game test subcommands (e.g. `/email test`) validate template file inputs, checking for double dots (`..`), forward slashes (`/`), or backslashes (`\`) to block directory traversal attacks.
+
+---
+
+## 🚀 Convenience & Usability Focus
+
+RetroMail is built to simplify developer and administrator workflows:
+
+* **Dynamic Branding (No HTML Editing):** Customize the server name, Discord invite link, forums URL, and documentation links in `config.yml`. The proxy web server automatically renders these values dynamically in the staff portal frontend.
+* **Self-Contained Web Server:** The Velocity/Bungee proxy starts an embedded, lightweight Netty HTTP server to host the dashboard interface without requiring external web server software like Nginx or Apache.
+* **Automated Template Extraction:** Default HTML templates (newsletters, maintenance notifications) extract automatically to the plugin directory on first boot.
+* **Intuitive Settings Chest GUI:** Players toggle News, Surveys, and Sales notifications directly through a clean 27-slot chest GUI.
+
+---
+
+## ⚡ Enterprise Architecture & Reliability
+
+Built to scale on high-traffic networks hosting thousands of concurrent players:
+
+* **Relocated HikariCP Connection Pooling:** Shaded and relocated inside the compiled JAR to prevent dependency version conflicts. Employs connection pools of up to 10 connections for MySQL, and restricts SQLite pools to 1 connection to ensure synchronous thread pipeline operations and prevent SQLite database write-locking issues.
+* **Socket Timeout Hardening:** Connection and read/write socket timeouts (5 seconds) are configured on both IMAP and SMTP configurations to prevent worker threads from blocking indefinitely when mail servers go offline.
+* **Off-Thread Compliance (Folia & Bukkit):** Database reads/writes are entirely offloaded to background worker thread pools, protecting the main Minecraft tick loop from lag spikes.
+* **Command Queue Backoff Manager:** Outgoing emails that fail during relay downtime are saved locally and retried automatically every 60 seconds using a thread-safe exponential backoff schedule (up to 5 attempts).
+
+---
+
+## 🇪🇺 Data Security & Privacy (GDPR & CCPA Compliant)
+
+Linking Minecraft UUIDs with email addresses requires compliance with strict privacy standards (GDPR / CCPA). RetroMail integrates these compliance protections directly into the core code:
+
+* **The Right to Be Forgotten (Hard Purging):** When a player runs `/email unsubscribe` or unlinks their account in the GUI, RetroMail immediately deletes their subscription status from `papersmtp_subscriptions` and deletes all entries in `papersmtp_mails` containing their email address. No persistent logs containing PII are retained.
+* **Automated Daily Log Rotation:** Email contents are pruned automatically. A daily background scheduler purges all sent/received logs in `papersmtp_mails` older than **30 days**.
+* **Self-Hosted Privacy:** All data is stored on databases owned and controlled by the server network. No data is shared with or sold to third-party developers, and emails contain no tracking pixels or tracking cookies.
+
+---
+
+## ⚖️ Legal Compliance & Trust Guidelines
+
+RetroMail operates fully within the bounds of international laws regulating mail and telemetry:
+
+* **CAN-SPAM Act & Anti-Spam Compliance:** Outgoing email dispatches are transactional (e.g. 6-digit verification codes) or newsletter broadcasts. Unsubscribing is handled directly in-game or via the GUI, modifying database parameters instantly to prevent further mail dispatches. Every outgoing email uses clear headers.
+* **COPPA (Child Online Privacy Protection):** No personal demographic information is gathered from players. Emails are only collected when a player explicitly decides to link their account. No silent automated address harvesting is performed.
+* **Domain Authentication Rep:** RetroMail mandates the configuration of SPF, DKIM, and DMARC records on your domain (e.g. through Cloudflare), validating sender identity and protecting domain reputation.
+* **GPLv3 Compliance:** RetroMail respects library license dependencies. Shaded libraries (like HikariCP or JavaMail) are relocated inside the compiled JAR using standard patterns.
+
+---
+
 ## 🏷️ Release History
 
 ### v1.0.4 - BloodMoney (Current)
