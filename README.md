@@ -50,28 +50,44 @@ Maintaining player engagement and real-life connections has never been easier. R
 
 ## ⚙️ Technical Specifications & Architecture
 
-RetroMail is designed to scale with large networks. It utilizes a shared database (MySQL/MariaDB) to synchronize email verification records across all sub-servers, while the proxy host executes the web application server.
+RetroMail supports both **single-server (standalone)** setups for smaller networks and **multi-server (proxy)** setups for large Velocity/BungeeCord networks.
 
-| Aspect | Specification |
-| :--- | :--- |
-| **Supported Loaders** | Paper, Spigot, Folia, Velocity, BungeeCord |
-| **Compatibility Target** | Minecraft 1.8.8 through 26.2 |
-| **Java Requirements** | Java 8 minimum, Java 17+ recommended |
-| **Database Engines** | MySQL, MariaDB, SQLite |
-| **Relay Protocols** | SMTP (Relay) and IMAP (Catch-All Reply Listener) |
-| **Statistics Tracking** | Integrated via bStats (ID `31421`) |
+### 🔌 Architecture Options
+
+#### Option A: Single-Server (Standalone Spigot/Paper/Folia)
+For standalone servers, no proxy is required. RetroMail executes all operations inside the single server instance:
+* **Web Dashboard:** Hosted directly by the Spigot/Paper server instance on the assigned port.
+* **Email & Polling Workers:** Outbound SMTP queues and inbound IMAP listeners run asynchronously in background thread pools on the server instance.
+* **Database:** Connects directly to local SQLite (`.db` files) or a local MySQL server.
+* **In-Game Systems:** GUI menus, rewards, and player verification logic run on the same server.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│           Single Standalone Server (Paper/Spigot/Folia)          │
+│  - Hosts Netty Web Dashboard Server directly                    │
+│  - Executes IMAP incoming reply poll listener                   │
+│  - Handles SQLite / MySQL database storage                      │
+│  - Runs in-game chest GUI settings & rewards                    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Option B: Multi-Server Proxy Networks (Velocity/BungeeCord)
+For large networks, RetroMail delegates tasks to prevent port collision and reduce resources on sub-servers:
+* **Web Dashboard & IMAP Listener:** Hosted only on the Proxy server (Velocity/Bungee).
+* **Database:** Syncs dynamically across all backend nodes using a shared MySQL/MariaDB database.
+* **In-Game Systems:** Backend Spigot/Paper/Folia nodes communicate with the proxy via plugin messaging channels to execute rewards when players verify or transition servers.
 
 ```
                   ┌──────────────────────────────┐
                   │          Staff User          │
                   └──────────────┬───────────────┘
-                                 │ HTTP (Port 8080 / 8081)
+                                 │ HTTP (Port 8080)
                                  ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                     Velocity / Bungee Proxy                     │
 │  - Runs Web Dashboard Server (MailHandlerServer)                │
 │  - Polls catch-all reply emails via IMAP Listener               │
-│  - Handles central MariaDB and local SQLite caching             │
+│  - Handles central MariaDB database and local SQLite caches     │
 └────────────────────────────────┬────────────────────────────────┘
                                  │
          ┌───────────────────────┼───────────────────────┐
@@ -83,6 +99,17 @@ RetroMail is designed to scale with large networks. It utilizes a shared databas
 │  - Gives Reward │     │  - Gives Reward │     │  - Gives Reward │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
 ```
+
+---
+
+| Aspect | Specification |
+| :--- | :--- |
+| **Supported Loaders** | Paper, Spigot, Folia, Velocity, BungeeCord |
+| **Compatibility Target** | Minecraft 1.8.8 through 26.2 |
+| **Java Requirements** | Java 8 minimum, Java 17+ recommended |
+| **Database Engines** | MySQL, MariaDB, SQLite |
+| **Relay Protocols** | SMTP (Relay) and IMAP (Catch-All Reply Listener) |
+| **Statistics Tracking** | Integrated via bStats (ID `31421`) |
 
 ---
 
