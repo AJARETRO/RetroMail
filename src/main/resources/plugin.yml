@@ -2,7 +2,7 @@ name: RetroMail
 version: 1.0.5
 main: dev.retro.papersmtp.PaperSMTP
 api-version: 1.20
-description: A plugin that allows players to subscribe to real-life newsletters and verify their emails in-game.
+description: Secure double-opt-in SMTP gateway integration that verifies player emails in-game and coordinates multi-server proxy queues.
 author: Retro
 softdepend: [PlaceholderAPI]
 commands:

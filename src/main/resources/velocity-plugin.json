@@ -2,7 +2,7 @@
   "id": "retromail",
   "name": "RetroMail",
   "version": "1.0.5",
-  "description": "Allows players to subscribe to real-life newsletters and receive offline mail notifications via SMTP.",
+  "description": "Secure double-opt-in SMTP gateway integration that verifies player emails in-game and coordinates multi-server proxy queues.",
   "authors": [
     "Retro"
   ],

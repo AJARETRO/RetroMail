@@ -9,7 +9,7 @@
     <packaging>jar</packaging>
 
     <name>PaperSMTP</name>
-    <description>Allows players to subscribe to real-life newsletters and receive offline mail notifications via SMTP.</description>
+    <description>Secure double-opt-in SMTP gateway integration that verifies player emails in-game and coordinates multi-server proxy queues.</description>
 
     <properties>
         <java.version>1.8</java.version>
