@@ -399,7 +399,11 @@ RetroMail operates fully within the bounds of international laws regulating mail
 
 ## 🏷️ Release History
 
-### v1.0.4 - BloodMoney (Current)
+### v1.0.5 (Current)
+* **Dedicated Standalone Sync Toggle:** Added a dedicated `multi-server.enabled` configuration property (default: `false`). When set to `false` for standalone setups, RetroMail disables all proxy plugin channel messaging (`papersmtp:queue`) and executes reward commands locally and immediately.
+* **Plugin Channel Signature Hardening:** Secured cross-server plugin messaging queues with HmacSHA256 signatures and timestamp validations using a shared `security.secret-token` to prevent packet spoofing and replay attacks.
+
+### v1.0.4 - BloodMoney
 * **HikariCP Connection Pooling:** Integrated robust SQL connection pooling on MySQL databases (and SQLite pools of size 1) to enable non-blocking concurrent API queries, improving proxy dashboard latency and server stability under heavy load.
 * **IMAP/SMTP Socket Timeout Hardening:** Configured explicit connection and read/write socket timeouts (5 seconds) across all inbound and outbound JavaMail configurations to prevent polling threads from hanging indefinitely during network drops.
 * **GDPR & CCPA PII Scrubbing:** Wiped all email log entries matching a player's address directly upon unsubscription or unlink commands to ensure full PII data privacy compliance.
