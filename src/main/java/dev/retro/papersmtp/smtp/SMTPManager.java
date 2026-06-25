@@ -221,6 +221,19 @@ public class SMTPManager {
     public void sendEmail(String fromEmail, String fromName, String toEmail, String subject, String body, boolean isHtml) {
         PluginConfig config = plugin.getPluginConfig();
         
+        if (subject != null) {
+            subject = subject.replace("{server-name}", config.serverName != null ? config.serverName : "")
+                             .replace("{discord-link}", config.discordLink != null ? config.discordLink : "")
+                             .replace("{documentation-link}", config.documentationLink != null ? config.documentationLink : "")
+                             .replace("{forum-link}", config.forumLink != null ? config.forumLink : "");
+        }
+        if (body != null) {
+            body = body.replace("{server-name}", config.serverName != null ? config.serverName : "")
+                       .replace("{discord-link}", config.discordLink != null ? config.discordLink : "")
+                       .replace("{documentation-link}", config.documentationLink != null ? config.documentationLink : "")
+                       .replace("{forum-link}", config.forumLink != null ? config.forumLink : "");
+        }
+        
         Properties props = new Properties();
         props.put("mail.smtp.host", config.smtpHost);
         props.put("mail.smtp.port", String.valueOf(config.smtpPort));
