@@ -30,12 +30,14 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         final Player player = event.getPlayer();
-        // Request pending commands from proxy 1.5 seconds after joining
-        dev.retro.papersmtp.compatibility.SchedulerUtil.runLater(plugin, () -> {
-            if (player.isOnline()) {
-                plugin.requestPendingCommands(player.getUniqueId());
-            }
-        }, 30L);
+        // Request pending commands from proxy 1.5 seconds after joining if multi-server is enabled
+        if (plugin.getPluginConfig().multiServer) {
+            dev.retro.papersmtp.compatibility.SchedulerUtil.runLater(plugin, () -> {
+                if (player.isOnline()) {
+                    plugin.requestPendingCommands(player.getUniqueId());
+                }
+            }, 30L);
+        }
 
         // Notify OP players of updates
         if (player.isOp() && plugin.getUpdateChecker() != null && plugin.getUpdateChecker().isUpdateAvailable()) {

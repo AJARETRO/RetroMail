@@ -87,12 +87,14 @@ public class PaperSMTP extends JavaPlugin implements PluginMessageListener, Mail
         }
 
         // Register BungeeCord plugin messaging channels
-        getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
-        getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", this);
-        
-        // Register custom sync queue messaging channels
-        getServer().getMessenger().registerOutgoingPluginChannel(this, "papersmtp:queue");
-        getServer().getMessenger().registerIncomingPluginChannel(this, "papersmtp:queue", this);
+        if (pluginConfig.multiServer) {
+            getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+            getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", this);
+            
+            // Register custom sync queue messaging channels
+            getServer().getMessenger().registerOutgoingPluginChannel(this, "papersmtp:queue");
+            getServer().getMessenger().registerIncomingPluginChannel(this, "papersmtp:queue", this);
+        }
 
         // Setup bStats
         try {
@@ -140,12 +142,14 @@ public class PaperSMTP extends JavaPlugin implements PluginMessageListener, Mail
         }
         
         // Unregister BungeeCord plugin messaging channels
-        getServer().getMessenger().unregisterOutgoingPluginChannel(this, "BungeeCord");
-        getServer().getMessenger().unregisterIncomingPluginChannel(this, "BungeeCord", this);
-        
-        // Unregister custom sync queue messaging channels
-        getServer().getMessenger().unregisterOutgoingPluginChannel(this, "papersmtp:queue");
-        getServer().getMessenger().unregisterIncomingPluginChannel(this, "papersmtp:queue", this);
+        if (pluginConfig.multiServer) {
+            getServer().getMessenger().unregisterOutgoingPluginChannel(this, "BungeeCord");
+            getServer().getMessenger().unregisterIncomingPluginChannel(this, "BungeeCord", this);
+            
+            // Unregister custom sync queue messaging channels
+            getServer().getMessenger().unregisterOutgoingPluginChannel(this, "papersmtp:queue");
+            getServer().getMessenger().unregisterIncomingPluginChannel(this, "papersmtp:queue", this);
+        }
         
         getLogger().info("RetroMail has been disabled.");
     }
@@ -425,7 +429,10 @@ public class PaperSMTP extends JavaPlugin implements PluginMessageListener, Mail
     public void triggerVerificationRewards(UUID uuid) {
         dev.retro.papersmtp.database.SubscriptionState subState = getDatabaseManager().getSubscriptionState(uuid);
         String email = (subState != null) ? subState.getEmail() : "";
-        broadcastSyncMessage("verify", uuid.toString(), email);
+        
+        if (pluginConfig.multiServer) {
+            broadcastSyncMessage("verify", uuid.toString(), email);
+        }
         
         org.bukkit.entity.Player onlinePlayer = Bukkit.getPlayer(uuid);
         if (onlinePlayer != null) {
@@ -434,7 +441,17 @@ public class PaperSMTP extends JavaPlugin implements PluginMessageListener, Mail
                     onlinePlayer.sendMessage(org.bukkit.ChatColor.translateAlternateColorCodes('&', msg));
                 }
                 if (!getPluginConfig().rewardCommands.isEmpty()) {
-                    queueRewardsOnBungee(uuid, getPluginConfig().rewardCommands);
+                    if (pluginConfig.multiServer) {
+                        queueRewardsOnBungee(uuid, getPluginConfig().rewardCommands);
+                    } else {
+                        // Execute rewards immediately for single standalone server
+                        dev.retro.papersmtp.compatibility.SchedulerUtil.runSync(this, () -> {
+                            for (String cmd : getPluginConfig().rewardCommands) {
+                                String parsedCmd = cmd.replace("{player}", onlinePlayer.getName());
+                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsedCmd);
+                            }
+                        });
+                    }
                 }
             }
         }

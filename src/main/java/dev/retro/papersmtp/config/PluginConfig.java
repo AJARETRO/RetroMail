@@ -61,6 +61,7 @@ public class PluginConfig {
     public String documentationLink;
     public String forumLink;
     public String securitySecretToken;
+    public boolean multiServer;
 
     private Map<String, Object> messagesConfig = new HashMap<>();
 
@@ -168,6 +169,7 @@ public class PluginConfig {
         documentationLink = getString(config, "branding.documentation-link", "https://docs.ajaretro.dev");
         forumLink = getString(config, "branding.forum-link", "https://forum.ajaretro.dev");
         securitySecretToken = getString(config, "security.secret-token", "");
+        multiServer = getBoolean(config, "multi-server.enabled", false);
     }
 
     private String getString(Map<String, Object> map, String path, String def) {

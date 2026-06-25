@@ -1,7 +1,7 @@
 {
   "id": "retromail",
   "name": "RetroMail",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Allows players to subscribe to real-life newsletters and receive offline mail notifications via SMTP.",
   "authors": [
     "Retro"
