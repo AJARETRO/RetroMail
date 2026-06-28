@@ -63,6 +63,8 @@ public class GatewayValidator {
 
     // Runtime state (checked dynamically)
     private boolean verifiedActive = false;
+    private boolean initialCheckCompleted = false;
+    private long lastSuccessfulVerificationTime = 0;
     private String cachedStatus = "invalid";
     private int cachedAllowed = 0;
     private int cachedActive = 0;
@@ -140,15 +142,31 @@ public class GatewayValidator {
                     parseAndVerifyResponse(sb.toString());
                 }
             } else {
-                verifiedActive = false;
+                handleFailure(responseCode >= 500 || responseCode == 404 || responseCode == 503);
             }
         } catch (Throwable t) {
-            verifiedActive = false;
+            handleFailure(true);
         } finally {
             if (conn != null) {
                 conn.disconnect();
             }
         }
+    }
+
+    private void handleFailure(boolean isOffline) {
+        if (isOffline && initialCheckCompleted) {
+            long offlineDuration = System.currentTimeMillis() - lastSuccessfulVerificationTime;
+            if (offlineDuration <= 86400000L) { // 24 hours
+                if (!verifiedActive) {
+                    plugin.getLogger().log(Level.WARNING, "[RetroMail] License authentication server unreachable. Operating in Offline Grace Period (Premium active for " + ((86400000L - offlineDuration) / 60000L) + " more minutes).");
+                }
+                verifiedActive = true;
+                return;
+            } else {
+                plugin.getLogger().log(Level.SEVERE, "[RetroMail] Offline grace period expired. Defaulting to free Community Edition (watermarks enabled).");
+            }
+        }
+        verifiedActive = false;
     }
 
     private void parseAndVerifyResponse(String jsonStr) {
@@ -165,6 +183,8 @@ public class GatewayValidator {
                     plugin.getLogger().log(Level.INFO, "[RetroMail] Commercial network license key verified successfully. Watermarks disabled.");
                 }
                 verifiedActive = true;
+                initialCheckCompleted = true;
+                lastSuccessfulVerificationTime = System.currentTimeMillis();
             } else {
                 if (verifiedActive || "limit_exceeded".equals(status)) {
                     plugin.getLogger().log(Level.WARNING, "[RetroMail] License verification signature verification failed (Status: " + status + "). Defaulting to free Community Edition (watermarks enabled).");
@@ -179,7 +199,7 @@ public class GatewayValidator {
             this.cachedSignature = signature;
 
         } catch (Throwable t) {
-            verifiedActive = false;
+            handleFailure(true);
         }
     }
 
