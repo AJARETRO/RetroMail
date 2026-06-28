@@ -1,5 +1,19 @@
 # RetroMail Configuration File
 
+# Multi-Server Sync Settings
+# Set to true to queue reward commands through a central MySQL database and proxy sync channel.
+# Set to false for standalone single-server setups where commands run locally and immediately.
+multi-server:
+  enabled: false
+
+# Security Settings
+# Secret token to secure, authenticate, and encrypt communication between Proxy and backend servers.
+# Ensure the exact same token is configured across all servers in your network.
+# If empty ("") on proxies (Bungee/Velocity), the plugin will refuse to load and go dark.
+# On backend servers (Paper/Folia), empty ("") allows unauthenticated local broadcasts.
+security:
+  secret-token: ""
+
 # Database Settings
 database:
   # Supported types: 'sqlite' or 'mysql'
@@ -73,10 +87,3 @@ branding:
   discord-link: 'https://discord.gg/retro'
   documentation-link: 'https://docs.ajaretro.dev'
   forum-link: 'https://forum.ajaretro.dev'
-
-# Security Settings
-security:
-  # Secret token to secure and authenticate communication between Proxy and backend servers.
-  # Leave empty ("") to disable signature verification (not recommended for production).
-  # Ensure the exact same token is configured across all servers in your network.
-  secret-token: ""
