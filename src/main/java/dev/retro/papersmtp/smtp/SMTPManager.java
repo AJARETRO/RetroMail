@@ -341,17 +341,29 @@ public class SMTPManager {
         StringBuilder tagClosureBuilder = new StringBuilder();
         String lowerBody = finalBody.toLowerCase();
         
-        // 1. Close unclosed HTML comment
+        // 1. Close unclosed HTML comment safely (using hidden wrapper to avoid plain-text leak)
         int lastOpenComment = lowerBody.lastIndexOf("<!--");
         int lastCloseComment = lowerBody.lastIndexOf("-->");
         if (lastOpenComment > lastCloseComment) {
-            tagClosureBuilder.append("-->\n");
+            tagClosureBuilder.append("<div style=\"display:none !important;\">--></div>\n");
         }
         
-        // 2. Safely close non-layout elements
-        tagClosureBuilder.append("</style>\n</script>\n</noembed>\n</noscript>\n</textarea>\n</title>\n");
+        // 2. Safely close non-layout elements inside a hidden container
+        tagClosureBuilder.append("<div style=\"display:none !important;\">")
+                         .append("</style></script></noembed></noscript></textarea></title>")
+                         .append("</div>\n");
         
-        // 3. Safely balance layout elements to avoid breaking the outer template structure
+        // 3. Strip comments, style, and script blocks from a temporary copy to count only rendered layout tags
+        String tempBody = lowerBody;
+        if (lastOpenComment > lastCloseComment) {
+            tempBody += "-->";
+        }
+        String cleanBody = tempBody
+            .replaceAll("(?s)<!--.*?-->", "")
+            .replaceAll("(?s)<style.*?>.*?</style>", "")
+            .replaceAll("(?s)<script.*?>.*?</script>", "");
+        
+        // 4. Safely balance layout elements to avoid breaking the outer template structure
         String[] tagsToBalance = {"div", "span", "table", "tr", "td", "a", "p", "b", "i", "font"};
         for (String tag : tagsToBalance) {
             int openCount = 0;
@@ -359,9 +371,9 @@ public class SMTPManager {
             
             // Count open tags (<tag> or <tag ...)
             int idx = 0;
-            while ((idx = lowerBody.indexOf("<" + tag, idx)) != -1) {
-                if (idx + tag.length() + 1 < lowerBody.length()) {
-                    char next = lowerBody.charAt(idx + tag.length() + 1);
+            while ((idx = cleanBody.indexOf("<" + tag, idx)) != -1) {
+                if (idx + tag.length() + 1 < cleanBody.length()) {
+                    char next = cleanBody.charAt(idx + tag.length() + 1);
                     if (next == '>' || Character.isWhitespace(next) || next == '/') {
                         openCount++;
                     }
@@ -371,7 +383,7 @@ public class SMTPManager {
             
             // Count close tags (</tag>)
             idx = 0;
-            while ((idx = lowerBody.indexOf("</" + tag + ">", idx)) != -1) {
+            while ((idx = cleanBody.indexOf("</" + tag + ">", idx)) != -1) {
                 closeCount++;
                 idx += tag.length() + 3;
             }
