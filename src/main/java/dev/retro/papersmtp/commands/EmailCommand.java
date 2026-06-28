@@ -99,12 +99,6 @@ public class EmailCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
 
-            if (!dev.retro.papersmtp.compatibility.GatewayValidator.isLicenseActive()) {
-                sender.sendMessage("§c[RetroMail] Mass mailing requires an active RetroMail Network License.");
-                sender.sendMessage("§cPlease purchase a license key at §elicense.ajaretro.dev §cand configure it in config.yml.");
-                return true;
-            }
-
             if (args.length < 3) {
                 sender.sendMessage("§cUsage: /email mass <subject> <message...>");
                 return true;
