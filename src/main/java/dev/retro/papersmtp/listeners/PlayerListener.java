@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 public class PlayerListener implements Listener {
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
     private final PaperSMTP plugin;
+    private static long lastOpReminderTime = 0;
 
     public PlayerListener(PaperSMTP plugin) {
         this.plugin = plugin;
@@ -45,6 +46,16 @@ public class PlayerListener implements Listener {
                                plugin.getDescription().getVersion() + " §aLatest: §e" + 
                                plugin.getUpdateChecker().getLatestVersion());
             player.sendMessage("§aDownload it from: §bhttps://github.com/AJARETRO/RetroMail/releases");
+        }
+
+        // Notify OP players of Free Community Edition status (once per 24 hours)
+        if (player.isOp() && !dev.retro.papersmtp.compatibility.GatewayValidator.isLicenseActive()) {
+            long now = System.currentTimeMillis();
+            if (now - lastOpReminderTime > 86400000L) { // 24 hours
+                lastOpReminderTime = now;
+                player.sendMessage("§c§l[RetroMail] §6Running in Free Community Edition.");
+                player.sendMessage("§eTo remove the developer watermark and connect your server to our hosted portal, get a commercial key at: §ahttps://license.ajaretro.dev");
+            }
         }
     }
 

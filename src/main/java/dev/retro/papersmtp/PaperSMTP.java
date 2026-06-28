@@ -127,6 +127,13 @@ public class PaperSMTP extends JavaPlugin implements PluginMessageListener, Mail
         getLogger().info("Mail System by AJA_RETRO");
         getLogger().info("https://modrinth.com/user/AJA_R3TR0");
         getLogger().info("=============================================");
+
+        // Console reminder on startup completion
+        dev.retro.papersmtp.compatibility.SchedulerUtil.runLater(this, () -> {
+            if (!dev.retro.papersmtp.compatibility.GatewayValidator.isLicenseActive()) {
+                getLogger().log(java.util.logging.Level.WARNING, "[RetroMail] Running in Free Community Edition. To remove the developer watermark and connect your server to our hosted portal, obtain a commercial key at https://license.ajaretro.dev.");
+            }
+        }, 20L); // 1 second delay
     }
 
     @Override

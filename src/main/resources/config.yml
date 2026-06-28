@@ -15,8 +15,9 @@ security:
   secret-token: ""
 
 # License Key Settings
-# Enter your license key from license.ajaretro.dev to remove the developer watermark.
-# Leave blank ("") to run in standard Community Mode.
+# To remove the developer watermark and connect your server to our hosted portal,
+# purchase a commercial key at https://license.ajaretro.dev and paste it below.
+# Leave blank ("") to run in standard Free Community Mode.
 license-key: ""
 
 # Database Settings

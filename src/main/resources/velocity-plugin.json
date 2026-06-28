@@ -1,7 +1,7 @@
 {
   "id": "retromail",
   "name": "RetroMail",
-  "version": "1.0.6-nightMare",
+  "version": "1.0.7-deadeye",
   "description": "Secure double-opt-in SMTP gateway integration that verifies player emails in-game and coordinates multi-server proxy queues.",
   "authors": [
     "Retro"

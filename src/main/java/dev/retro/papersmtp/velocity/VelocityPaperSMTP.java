@@ -21,9 +21,10 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-@Plugin(id = "retromail", name = "RetroMail", version = "1.0.6-nightMare", description = "Secure double-opt-in SMTP gateway integration that verifies player emails in-game and coordinates multi-server proxy queues.", authors = {"Retro"})
+@Plugin(id = "retromail", name = "RetroMail", version = "1.0.7-deadeye", description = "Secure double-opt-in SMTP gateway integration that verifies player emails in-game and coordinates multi-server proxy queues.", authors = {"Retro"})
 public class VelocityPaperSMTP implements MailPluginInterface {
     public static final MinecraftChannelIdentifier IDENTIFIER = MinecraftChannelIdentifier.from("papersmtp:queue");
 
@@ -157,6 +158,13 @@ public class VelocityPaperSMTP implements MailPluginInterface {
         logger.info("VelocityRetroMail (Proxy Version) Enabled!");
         logger.info("Mail Sync Queue & Web Dashboard Server by AJA_RETRO");
         logger.info("=============================================");
+
+        // Console reminder on startup completion
+        server.getScheduler().buildTask(this, () -> {
+            if (!dev.retro.papersmtp.compatibility.GatewayValidator.isLicenseActive()) {
+                logger.warn("[RetroMail] Running in Free Community Edition. To remove the developer watermark and connect your server to our hosted portal, obtain a commercial key at https://license.ajaretro.dev.");
+            }
+        }).delay(1, TimeUnit.SECONDS).schedule();
     }
 
     @Subscribe
