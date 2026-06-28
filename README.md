@@ -125,6 +125,14 @@ For large networks, RetroMail delegates tasks to prevent port collision and redu
 Edit `plugins/RetroMail/config.yml` on each server:
 
 ```yaml
+# Multi-Server Sync Settings (Set to false for standalone setups)
+multi-server:
+  enabled: false
+
+# Security Token (Must match on all proxy and backend servers if multi-server sync is enabled)
+security:
+  secret-token: "your-shared-secret-token-here"
+
 database:
   type: 'mysql'
   mysql:
@@ -377,24 +385,24 @@ Built to scale on high-traffic networks hosting thousands of concurrent players:
 
 ---
 
-## 🇪🇺 Data Security & Privacy (GDPR & CCPA Compliant)
+## 🇪🇺 Data Security & Privacy (GDPR & CCPA Architecture)
 
-Linking Minecraft UUIDs with email addresses requires compliance with strict privacy standards (GDPR / CCPA). RetroMail integrates these compliance protections directly into the core code:
+While RetroMail provides the architectural tools necessary to maintain strict privacy standards (GDPR / CCPA), the server network/administrator operates as the sole Data Controller. By deploying this software, you assume full legal responsibility for player data management. The plugin provides the following compliance mechanisms:
 
-* **The Right to Be Forgotten (Hard Purging):** When a player runs `/email unsubscribe` or unlinks their account in the GUI, RetroMail immediately deletes their subscription status from `papersmtp_subscriptions` and deletes all entries in `papersmtp_mails` containing their email address. No persistent logs containing PII are retained.
-* **Automated Daily Log Rotation:** Email contents are pruned automatically. A daily background scheduler purges all sent/received logs in `papersmtp_mails` older than **30 days**.
-* **Self-Hosted Privacy:** All data is stored on databases owned and controlled by the server network. No data is shared with or sold to third-party developers, and emails contain no tracking pixels or tracking cookies.
+* **The Right to Be Forgotten (Hard Purging):** When a player runs `/email unsubscribe` or unlinks their account in the GUI, RetroMail immediately deletes their subscription status from `papersmtp_subscriptions` and deletes all entries in `papersmtp_mails` containing their email address. No soft-deletes or persistent logs containing PII are retained.
+* **Automated Daily Log Rotation:** Email contents are pruned automatically. A daily background scheduler purges all sent/received logs in `papersmtp_mails` older than **30 days** to enforce data minimization.
+* **Self-Hosted Sovereignty:** All data is stored on databases exclusively owned, hosted, and controlled by the server network. The software transmits no data to the developers or third-party networks.
 
 ---
 
-## ⚖️ Legal Compliance & Trust Guidelines
+## ⚖️ Legal Compliance & Admin Responsibility Guidelines
 
-RetroMail operates fully within the bounds of international laws regulating mail and telemetry:
+RetroMail is a self-hosted utility provided "as-is". It is the sole responsibility of the server administrator to ensure its deployment complies with local and international regulations.
 
-* **CAN-SPAM Act & Anti-Spam Compliance:** Outgoing email dispatches are transactional (e.g. 6-digit verification codes) or newsletter broadcasts. Unsubscribing is handled directly in-game or via the GUI, modifying database parameters instantly to prevent further mail dispatches. Every outgoing email uses clear headers.
-* **COPPA (Child Online Privacy Protection):** No personal demographic information is gathered from players. Emails are only collected when a player explicitly decides to link their account. No silent automated address harvesting is performed.
-* **Domain Authentication Rep:** RetroMail mandates the configuration of SPF, DKIM, and DMARC records on your domain (e.g. through Cloudflare), validating sender identity and protecting domain reputation.
-* **GPLv3 Compliance:** RetroMail respects library license dependencies. Shaded libraries (like HikariCP or JavaMail) are relocated inside the compiled JAR using standard patterns.
+* **CAN-SPAM Act & Anti-Spam Compliance:** Outgoing emails utilize transactional or newsletter frameworks with instant database-driven opt-outs. **Admin Requirement:** To comply with global anti-spam laws, administrators must manually update the default HTML templates (located in `plugins/retromail/web/`) to include their network's valid physical postal address or PO Box in the email footer. The plugin developers are not liable for any blacklisting or spam violations incurred by your broadcasts.
+* **COPPA (Child Online Privacy Protection Act):** RetroMail does not perform age verification and cannot determine the age of players executing in-game commands. If your Minecraft network caters to or is accessible to players under the age of 13, you must implement age-gating or parental consent checkpoints before granting access to the `/email` permission node.
+* **Domain Authentication Reputation:** The software mandates the configuration of SPF, DKIM, and DMARC records on your domain (e.g., through Cloudflare) to prevent spoofing. Server owners assume all liability for domain reputation damages resulting from bulk mail dispatches.
+* **Limitation of Liability:** In no event shall the authors or copyright holders of RetroMail be held liable for any data leaks, regulatory fines, legal actions, or server infrastructure compromises resulting from the use, misuse, or misconfiguration of this software.
 
 ---
 
