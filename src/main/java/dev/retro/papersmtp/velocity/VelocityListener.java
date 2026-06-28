@@ -117,8 +117,10 @@ public class VelocityListener {
                     plugin.getPluginConfig().securitySecretToken
             );
 
-            // If secret token is set, wrap the payload with security signature and timestamp
+            String writePayload = payload;
+            // If secret token is set, wrap the payload with security signature and timestamp, and encrypt payload
             if (plugin.getPluginConfig().securitySecretToken != null && !plugin.getPluginConfig().securitySecretToken.isEmpty()) {
+                writePayload = dev.retro.papersmtp.compatibility.EncryptionUtil.encryptAES(payload, plugin.getPluginConfig().securitySecretToken);
                 out.writeUTF("secure-msg");
                 out.writeUTF(signature);
                 out.writeLong(timestamp);
@@ -126,7 +128,7 @@ public class VelocityListener {
 
             out.writeUTF(action);
             out.writeUTF(uuidStr);
-            out.writeUTF(payload);
+            out.writeUTF(writePayload);
 
             serverConn.sendPluginMessage(VelocityPaperSMTP.IDENTIFIER, stream.toByteArray());
         } catch (Exception e) {

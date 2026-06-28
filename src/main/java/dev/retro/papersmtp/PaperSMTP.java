@@ -313,6 +313,21 @@ public class PaperSMTP extends JavaPlugin implements PluginMessageListener, Mail
 
             // Verification Check
             String secretToken = pluginConfig.securitySecretToken;
+            
+            // Decrypt payload first if signed
+            if (isSigned) {
+                if (secretToken == null || secretToken.isEmpty()) {
+                    getLogger().log(Level.WARNING, "Received signed/encrypted packet, but security.secret-token is empty. Cannot decrypt.");
+                    return;
+                }
+                try {
+                    payload = dev.retro.papersmtp.compatibility.EncryptionUtil.decryptAES(payload, secretToken);
+                } catch (Exception e) {
+                    getLogger().log(Level.WARNING, "Failed to decrypt plugin channel packet payload: " + e.getMessage());
+                    return;
+                }
+            }
+
             if (secretToken != null && !secretToken.isEmpty()) {
                 if (!isSigned) {
                     getLogger().log(Level.WARNING, "Rejected UNSIGNED plugin channel packet on papersmtp:queue. Ensure the proxy also has the security.secret-token set.");

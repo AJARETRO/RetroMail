@@ -119,8 +119,10 @@ public class BungeeListener implements Listener {
                     plugin.getSecuritySecretToken()
             );
 
-            // If secret token is set, wrap the payload with security signature and timestamp
+            String writePayload = payload;
+            // If secret token is set, wrap the payload with security signature and timestamp, and encrypt payload
             if (plugin.getSecuritySecretToken() != null && !plugin.getSecuritySecretToken().isEmpty()) {
+                writePayload = dev.retro.papersmtp.compatibility.EncryptionUtil.encryptAES(payload, plugin.getSecuritySecretToken());
                 out.writeUTF("secure-msg");
                 out.writeUTF(signature);
                 out.writeLong(timestamp);
@@ -128,7 +130,7 @@ public class BungeeListener implements Listener {
 
             out.writeUTF(action);
             out.writeUTF(uuidStr);
-            out.writeUTF(payload);
+            out.writeUTF(writePayload);
 
             player.getServer().sendData("papersmtp:queue", stream.toByteArray());
         } catch (Exception e) {
