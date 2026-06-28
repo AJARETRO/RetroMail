@@ -137,6 +137,9 @@ public class VelocityPaperSMTP implements MailPluginInterface {
         // Setup managers
         smtpManager = new SMTPManager(this);
 
+        // Setup Gateway Validator (Licensing)
+        dev.retro.papersmtp.compatibility.GatewayValidator.start(this, pluginConfig.licenseKey, pluginConfig.mailHandlerPort);
+
         // Register channel and listener
         server.getChannelRegistrar().register(IDENTIFIER);
         server.getEventManager().register(this, new VelocityListener(this));
@@ -158,6 +161,7 @@ public class VelocityPaperSMTP implements MailPluginInterface {
 
     @Subscribe
     public void onProxyShutdown(ProxyShutdownEvent event) {
+        dev.retro.papersmtp.compatibility.GatewayValidator.stopValidator();
         if (mailHandlerServer != null) {
             mailHandlerServer.stop();
         }

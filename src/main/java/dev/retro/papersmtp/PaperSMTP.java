@@ -60,6 +60,9 @@ public class PaperSMTP extends JavaPlugin implements PluginMessageListener, Mail
         // Setup SMTP Manager
         smtpManager = new SMTPManager(this);
 
+        // Setup Gateway Validator (Licensing)
+        dev.retro.papersmtp.compatibility.GatewayValidator.start(this, pluginConfig.licenseKey, pluginConfig.mailHandlerPort);
+
         // Setup IMAP Listener
         imapListener = new IMAPListener(this);
         imapListener.start();
@@ -128,6 +131,7 @@ public class PaperSMTP extends JavaPlugin implements PluginMessageListener, Mail
 
     @Override
     public void onDisable() {
+        dev.retro.papersmtp.compatibility.GatewayValidator.stopValidator();
         if (imapListener != null) {
             imapListener.stop();
         }

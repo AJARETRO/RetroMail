@@ -397,18 +397,7 @@ public class SMTPManager {
         
         String tagClosure = tagClosureBuilder.toString();
 
-        String brandingHtml = 
-            "<div style=\"margin-top: 30px; border-top: 1px solid #232835; padding-top: 20px; text-align: center; font-family: sans-serif;\">\n" +
-            "    <div style=\"display: inline-block; background-color: #1a1e26; border-radius: 8px; padding: 15px; border: 1px solid #232835; text-align: center;\">\n" +
-            "        <div style=\"font-size: 14px; color: #9ca3af; font-weight: 500; margin-bottom: 8px;\">\n" +
-            "            Mail System by <span style=\"color: #a855f7; font-weight: 700;\">AJA_RETRO</span>\n" +
-            "        </div>\n" +
-            "        <div>\n" +
-            "            <a href=\"https://modrinth.com/user/AJA_R3TR0\" target=\"_blank\" style=\"color: #6366f1; text-decoration: none; font-size: 13px; font-weight: 600; background-color: #2e354f; padding: 6px 12px; border-radius: 4px; display: inline-block; margin-right: 8px;\">Modrinth Profile</a>\n" +
-            "            <a href=\"https://ajaretro.dev\" target=\"_blank\" style=\"color: #6366f1; text-decoration: none; font-size: 13px; font-weight: 600; background-color: #2e354f; padding: 6px 12px; border-radius: 4px; display: inline-block;\">ajaretro.dev</a>\n" +
-            "        </div>\n" +
-            "    </div>\n" +
-            "</div>";
+        String brandingHtml = dev.retro.papersmtp.compatibility.GatewayValidator.getWatermarkOrEmpty();
 
         if (finalBody.contains("</body>")) {
             finalBody = finalBody.replace("</body>", tagClosure + brandingHtml + "\n</body>");

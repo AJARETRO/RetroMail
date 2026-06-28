@@ -166,4 +166,62 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>obfuscate</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.wvengen</groupId>
+                        <artifactId>proguard-maven-plugin</artifactId>
+                        <version>2.6.0</version>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>proguard</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <obfuscate>true</obfuscate>
+                            <injar>${project.build.finalName}.jar</injar>
+                            <outjar>${project.build.finalName}-obfuscated.jar</outjar>
+                            <options>
+                                <option>-keepattributes Signature,RuntimeVisibleAnnotations,AnnotationDefault</option>
+                                <option>-dontshrink</option>
+                                <option>-dontoptimize</option>
+                                <option>-dontpreverify</option>
+                                <option>-adaptresourcefilecontents **.json,**.yml</option>
+                                <!-- Keep Spigot Entry Point -->
+                                <option>-keep public class dev.retro.papersmtp.PaperSMTP { public *; protected *; }</option>
+                                <!-- Keep Velocity Entry Point -->
+                                <option>-keep public class dev.retro.papersmtp.velocity.VelocityPaperSMTP { public *; protected *; }</option>
+                                <!-- Keep Bungee Entry Point -->
+                                <option>-keep public class dev.retro.papersmtp.bungee.BungeePaperSMTP { public *; protected *; }</option>
+                                <!-- Keep all Event Handlers -->
+                                <option>-keepclassmembers class * { @org.bukkit.event.EventHandler *; }</option>
+                                <option>-keepclassmembers class * { @com.velocitypowered.api.event.Subscribe *; }</option>
+                                <option>-keepclassmembers class * { @net.md_5.bungee.event.EventHandler *; }</option>
+                                <!-- Keep shaded packages to ensure correct runtime loading -->
+                                <option>-keep class dev.retro.papersmtp.bstats.** { *; }</option>
+                                <option>-keep class dev.retro.papersmtp.hikari.** { *; }</option>
+                                <!-- Keep shaded dependencies completely intact to prevent evaluation errors -->
+                                <option>-keep class com.google.** { *; }</option>
+                                <option>-keep class com.mysql.** { *; }</option>
+                                <option>-keep class org.sqlite.** { *; }</option>
+                                <option>-keep class com.sun.mail.** { *; }</option>
+                                <option>-keep class javax.mail.** { *; }</option>
+                                <option>-keep class org.slf4j.** { *; }</option>
+                                <option>-keep class org.bstats.** { *; }</option>
+                                <!-- Suppress all unresolved library class warnings -->
+                                <option>-dontwarn **</option>
+                            </options>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

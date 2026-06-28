@@ -28,6 +28,12 @@ public class MassEmailCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        if (!dev.retro.papersmtp.compatibility.GatewayValidator.isLicenseActive()) {
+            sender.sendMessage("§c[RetroMail] Mass mailing requires an active RetroMail Network License.");
+            sender.sendMessage("§cPlease purchase a license key at §elicense.ajaretro.dev §cand configure it in config.yml.");
+            return true;
+        }
+
         if (args.length < 1) {
             sender.sendMessage("§cUsage: /mass-email <filename> [subject...]");
             sender.sendMessage("§d§lMail System by AJA_RETRO §7- §bhttps://modrinth.com/user/AJA_R3TR0");
