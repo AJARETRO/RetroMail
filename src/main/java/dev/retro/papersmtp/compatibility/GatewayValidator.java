@@ -176,6 +176,11 @@ public class GatewayValidator {
             int active = extractJsonInt(jsonStr, "active_servers");
             long timestamp = extractJsonLong(jsonStr, "timestamp");
             String signature = extractJsonString(jsonStr, "signature");
+            String warning = extractJsonString(jsonStr, "warning");
+
+            if (!warning.isEmpty()) {
+                plugin.getLogger().log(Level.WARNING, "[RetroMail] WARNING: " + warning);
+            }
 
             boolean isSignatureValid = verifySignature(licenseKey, status, allowed, active, timestamp, signature);
             if (isSignatureValid && "valid".equals(status)) {
@@ -186,7 +191,9 @@ public class GatewayValidator {
                 initialCheckCompleted = true;
                 lastSuccessfulVerificationTime = System.currentTimeMillis();
             } else {
-                if (verifiedActive || "limit_exceeded".equals(status)) {
+                if ("frozen".equals(status)) {
+                    plugin.getLogger().log(Level.WARNING, "[RetroMail] NOTICE: This license key has been frozen by the owner. Operating in Free Community Edition.");
+                } else if (verifiedActive || "limit_exceeded".equals(status)) {
                     plugin.getLogger().log(Level.WARNING, "[RetroMail] License verification signature verification failed (Status: " + status + "). Defaulting to free Community Edition (watermarks enabled).");
                 }
                 verifiedActive = false;
