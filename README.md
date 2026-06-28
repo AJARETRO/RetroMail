@@ -5,7 +5,7 @@
   
   [![Modrinth Download](https://img.shields.io/badge/Modrinth-Download-00AD5C?style=for-the-badge&logo=modrinth)](https://modrinth.com/plugin/retromail)
   [![GitHub Releases](https://img.shields.io/badge/GitHub-Releases-222222?style=for-the-badge&logo=github)](https://github.com/AJARETRO/RetroMail/releases)
-  [![Patreon Sponsor](https://img.shields.io/badge/Patreon-Sponsor-F96854?style=for-the-badge&logo=patreon)](https://patreon.com/AJA_RETRO?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink#)
+  [![Licensing Portal](https://img.shields.io/badge/Licensing-Portal-indigo?style=for-the-badge&logo=auth0)](https://license.ajaretro.dev)
   [![Platform Support](https://img.shields.io/badge/Platforms-Paper%20%7C%20Spigot%20%7C%20Velocity%20%7C%20Bungee-007ACC?style=for-the-badge&logo=minecraft)](https://modrinth.com/plugin/retromail)
   [![bStats Metrics](https://img.shields.io/badge/bStats-ID%2031421-orange?style=for-the-badge&logo=chartmogul)](https://bstats.org/plugin/bukkit/RetroMail/31421)
   
@@ -406,27 +406,33 @@ RetroMail is a self-hosted utility provided "as-is". It is the sole responsibili
 
 ---
 
-## 💎 Support the Project & Enterprise Tiers
+## 💎 Commercial Licensing & Portal Tiers
 
-If you love RetroMail and want to support its active development, or if you run a commercial network that requires dedicated enterprise backing, consider supporting the project on [Patreon](https://patreon.com/AJA_RETRO?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink#)!
+RetroMail commercial licenses can be purchased and managed directly via our licensing portal at [license.ajaretro.dev](https://license.ajaretro.dev). Payments are processed securely via NOWPayments (Crypto).
 
-### 🛠️ Tiers & Benefits
+### 🛠️ Portal License Tiers
 
-* **Priority Support | $5/month**  
-  Receive direct, prioritized technical support for any deployment issues, configuration hurdles, or debugging needs across your network nodes.
+* **Tier 1 (Personal) | $20 / 30 Days**  
+  Supports up to **4** concurrent server instances. Perfect for small setups and developer environments.
   
-* **Super Supporters | $20/month**  
-  Directly influence the project roadmap by requesting custom features to be integrated into the plugin ecosystem.  
-  Requested features are fully maintained under the project's All Rights Reserved protections and deployed to public builds following a one-week exclusivity window.
+* **Tier 2 (Pro) | $35 / 30 Days**  
+  Supports up to **8** concurrent server instances. Includes 15-minute zero-downtime key rotation overlap.
   
-* **Customized Customer | $50/month**  
-  Receive a fully white-labeled, proprietary compilation of the plugin tailored for your network.  
-  All system watermarks, developer branding elements, and external documentation links are completely removed to preserve your platform's localized identity.
+* **Tier 3 (Enterprise) | $60 / 30 Days**  
+  Supports up to **14** concurrent server instances. Includes 15-minute zero-downtime key rotation overlap and priority rate limit validations.
   
-* **Sudo Mode | $70/month**  
-  Get a completely bespoke, highly personalized version of the infrastructure with all default developer name references entirely stripped out.  
-  Includes a dedicated development allocation of up to 5 custom features tailored exclusively to your server's unique technical architecture.  
-  Enjoy a strict 1-month timed public exclusivity window before any of your commissioned features are introduced to public releases.
+* **Tier 4 (Overdrive) | $90 / 30 Days**  
+  Supports up to **24** concurrent server instances. Includes all Enterprise benefits plus remote key emergency freezing and instant reactivation control.
+
+---
+
+### 🔑 Features & Self-Service Operations
+
+The licensing portal includes comprehensive self-service features:
+* **Zero-Downtime Key Rotation:** Rotate keys instantly with a 15-minute validity overlap for active server node sessions.
+* **Emergency Remote Freezing:** Temporarily freeze or unfreeze keys instantly from your dashboard to protect your endpoints.
+* **Real-time Session Monitoring:** Track active connection IPs, ports, and validation heartbeat pings in real-time.
+* **Security & Multi-Factor Auth:** Strengthen account access using Email OTP validation codes and Google Authenticator 2FA.
 
 ---
 
