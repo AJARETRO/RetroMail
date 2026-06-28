@@ -220,7 +220,9 @@ public class MailHandlerServer {
                 }
 
                 String computedHash = EncryptionUtil.hashPassword(password, account.salt);
-                if (!computedHash.equals(account.passwordHash)) {
+                if (computedHash == null || !java.security.MessageDigest.isEqual(
+                        computedHash.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                        account.passwordHash.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
                     Map<String, String> err = new HashMap<>();
                     err.put("status", "error");
                     err.put("message", "Invalid credentials.");

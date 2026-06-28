@@ -323,7 +323,9 @@ public class PaperSMTP extends JavaPlugin implements PluginMessageListener, Mail
                         action + ":" + uuidStr + ":" + payload + ":" + timestamp,
                         secretToken
                 );
-                if (!expectedSig.equalsIgnoreCase(signature)) {
+                if (signature == null || !java.security.MessageDigest.isEqual(
+                        expectedSig.toLowerCase().getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                        signature.toLowerCase().getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
                     getLogger().log(Level.WARNING, "Rejected INVALID SIGNATURE plugin channel packet on papersmtp:queue.");
                     return;
                 }
