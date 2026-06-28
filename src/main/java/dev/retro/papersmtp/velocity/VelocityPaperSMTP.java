@@ -57,8 +57,9 @@ public class VelocityPaperSMTP implements MailPluginInterface {
         if (!configFile.exists()) {
             // Generate secure random key based on time and port
             int port = 25577; // default fallback
-            if (server.getBoundAddress().isPresent()) {
-                port = server.getBoundAddress().get().getPort();
+            java.net.InetSocketAddress addr = server.getBoundAddress();
+            if (addr != null) {
+                port = addr.getPort();
             }
             
             long time = System.currentTimeMillis();
