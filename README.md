@@ -1,15 +1,15 @@
 <div align="center">
   <img src="https://raw.githubusercontent.com/AJARETRO/RetroMail/main/IMG_20260624_115350.png" width="180" height="180" alt="RetroMail Logo" style="border-radius: 24px; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);" />
   
-  # 📬 RetroMail — Minecraft Email Verification & SMTP Newsletters (Paper/Spigot/Velocity)
+  # 📬 RetroMail — Minecraft Email Verification & SMTP Newsletters (Paper/Spigot/Folia/Velocity/Bungee)
   
   [![Modrinth Download](https://img.shields.io/badge/Modrinth-Download-00AD5C?style=for-the-badge&logo=modrinth)](https://modrinth.com/plugin/retromail)
   [![GitHub Releases](https://img.shields.io/badge/GitHub-Releases-222222?style=for-the-badge&logo=github)](https://github.com/AJARETRO/RetroMail/releases)
   [![Licensing Portal](https://img.shields.io/badge/Licensing-Portal-indigo?style=for-the-badge&logo=auth0)](https://license.ajaretro.dev)
-  [![Platform Support](https://img.shields.io/badge/Platforms-Paper%20%7C%20Spigot%20%7C%20Velocity%20%7C%20Bungee-007ACC?style=for-the-badge&logo=minecraft)](https://modrinth.com/plugin/retromail)
+  [![Platform Support](https://img.shields.io/badge/Platforms-Paper%20%7C%20Spigot%20%7C%20Folia%20%7C%20Velocity%20%7C%20Bungee-007ACC?style=for-the-badge&logo=minecraft)](https://modrinth.com/plugin/retromail)
   [![bStats Metrics](https://img.shields.io/badge/bStats-ID%2031421-orange?style=for-the-badge&logo=chartmogul)](https://bstats.org/plugin/bukkit/RetroMail/31421)
   
-  **The ultimate Minecraft email verification plugin and SMTP newsletter system. Reward players for verifying their email address in-game, send bulk announcements to your playerbase, and manage incoming support mail through a secure dashboard.**
+  **The ultimate Minecraft email verification plugin and SMTP newsletter system for Paper, Spigot, Folia, Velocity, and BungeeCord. Reward players for verifying their email address in-game, send bulk announcements to your playerbase, and manage incoming support mail through a secure dashboard.**
 </div>
 
 ---
