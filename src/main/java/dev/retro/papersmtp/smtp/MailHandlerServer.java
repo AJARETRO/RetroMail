@@ -581,9 +581,37 @@ public class MailHandlerServer {
                 }
 
                 String companyEmail = user.username + "@" + plugin.getPluginConfig().mailHandlerDomain;
+                String fromEmail = companyEmail;
+                
+                // If user is ADMIN, they can override the from address
+                if (user.role.equalsIgnoreCase("ADMIN") && json.has("from")) {
+                    String customFrom = json.get("from").getAsString().trim();
+                    if (!customFrom.isEmpty()) {
+                        if (!customFrom.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+                            Map<String, String> err = new HashMap<>();
+                            err.put("status", "error");
+                            err.put("message", "Invalid custom 'from' email address format.");
+                            sendJSONResponse(exchange, 400, err);
+                            return;
+                        }
+                        fromEmail = customFrom;
+                    }
+                }
+
                 String formattedBody = plugin.getSMTPManager().getFormattedEmailBody(subject, content, isHtml);
-                plugin.getSMTPManager().sendEmailAsync(companyEmail, user.username, to, subject, formattedBody, true);
-                plugin.getDatabaseManager().saveIncomingMail(companyEmail + " (" + user.email + ")", to, subject, formattedBody, true);
+                plugin.getSMTPManager().sendEmailAsync(fromEmail, user.username, to, subject, formattedBody, true);
+                plugin.getDatabaseManager().saveIncomingMail(fromEmail + " (" + user.email + ")", to, subject, formattedBody, true);
+                
+                // Audit logging
+                plugin.getLogger().log(Level.INFO, "Audit Log: Staff " + user.username + " (Role: " + user.role + ") sent email from '" + fromEmail + "' to '" + to + "' with subject: '" + subject + "'");
+                java.io.File auditFile = new java.io.File(plugin.getDataFolder(), "mail_audit.log");
+                try (java.io.FileWriter fw = new java.io.FileWriter(auditFile, true);
+                     java.io.PrintWriter pw = new java.io.PrintWriter(fw)) {
+                    String timestampStr = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date());
+                    pw.println("[" + timestampStr + "] User: " + user.username + " (Role: " + user.role + ") | From: " + fromEmail + " | To: " + to + " | Subject: " + subject);
+                } catch (Exception e) {
+                    plugin.getLogger().log(Level.WARNING, "Failed to write mail audit log: " + e.getMessage());
+                }
                 
                 Map<String, String> resp = new HashMap<>();
                 resp.put("status", "success");

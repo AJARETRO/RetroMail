@@ -235,6 +235,10 @@
                     <button @click="closeComposeModal" class="text-gray-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
                 <form @submit.prevent="sendOutboundMail" class="flex flex-col gap-4">
+                    <div v-if="profile.role === 'ADMIN'">
+                        <label class="block text-gray-400 text-xs font-semibold mb-1.5 uppercase tracking-wider">Sender (From) <span class="text-xs text-red-500 font-normal lowercase">(admin override)</span></label>
+                        <input type="email" v-model="composeModal.from" maxlength="254" pattern="^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,6}$" title="Must be a valid sender email address format" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm" placeholder="Leave empty for default (username@domain.com)">
+                    </div>
                     <div>
                         <label class="block text-gray-400 text-xs font-semibold mb-1.5 uppercase tracking-wider">Recipient (To)</label>
                         <input type="email" v-model="composeModal.to" required maxlength="254" pattern="^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,6}$" title="Must be a valid recipient email address format" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm" placeholder="client@email.com">
@@ -400,6 +404,7 @@
 
                 const composeModal = ref({
                     open: false,
+                    from: '',
                     to: '',
                     subject: '',
                     body: '',
@@ -574,7 +579,7 @@
                 };
 
                 const openComposeModal = () => {
-                    composeModal.value = { open: true, to: '', subject: '', body: '', isHtml: false };
+                    composeModal.value = { open: true, from: '', to: '', subject: '', body: '', isHtml: false };
                 };
                 const closeComposeModal = () => {
                     composeModal.value.open = false;
