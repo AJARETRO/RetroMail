@@ -17,6 +17,8 @@ import java.util.logging.Level;
 public class MassEmailCommand implements CommandExecutor, TabCompleter {
     private final PaperSMTP plugin;
 
+    private final java.util.concurrent.ConcurrentHashMap<String, Long> pendingConfirms = new java.util.concurrent.ConcurrentHashMap<>();
+
     public MassEmailCommand(PaperSMTP plugin) {
         this.plugin = plugin;
     }
@@ -26,6 +28,25 @@ public class MassEmailCommand implements CommandExecutor, TabCompleter {
         if (!sender.hasPermission("smtp.admin.massmail")) {
             sender.sendMessage("§cYou do not have permission to use this command.");
             return true;
+        }
+
+        // License warning check
+        boolean hasLicenseSet = plugin.getPluginConfig().licenseKey != null && !plugin.getPluginConfig().licenseKey.trim().isEmpty();
+        boolean isLicenseValid = dev.retro.papersmtp.compatibility.GatewayValidator.isLicenseActive();
+        
+        if (hasLicenseSet && !isLicenseValid) {
+            String senderKey = sender instanceof org.bukkit.entity.Player ? ((org.bukkit.entity.Player) sender).getUniqueId().toString() : "CONSOLE";
+            long now = System.currentTimeMillis();
+            Long lastWarning = pendingConfirms.get(senderKey);
+            if (lastWarning == null || (now - lastWarning) > 30000) {
+                pendingConfirms.put(senderKey, now);
+                sender.sendMessage("§c[RetroMail] WARNING: The configured license key is invalid or inactive.");
+                sender.sendMessage("§eThe developer watermark will be appended to this mass mail.");
+                sender.sendMessage("§eTo confirm and send anyway, please run the command again within 30 seconds.");
+                return true;
+            } else {
+                pendingConfirms.remove(senderKey);
+            }
         }
 
         if (args.length < 1) {
