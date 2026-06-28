@@ -49,8 +49,82 @@ public class VelocityPaperSMTP implements MailPluginInterface {
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
+        // Enforce config directory creation
+        if (!getDataFolder().exists()) {
+            getDataFolder().mkdirs();
+        }
+        File configFile = new File(getDataFolder(), "config.yml");
+        if (!configFile.exists()) {
+            // Generate secure random key based on time and port
+            int port = 25577; // default fallback
+            if (server.getBoundAddress().isPresent()) {
+                port = server.getBoundAddress().get().getPort();
+            }
+            
+            long time = System.currentTimeMillis();
+            String raw = time + ":" + port + ":" + new java.security.SecureRandom().nextLong();
+            String generatedKey;
+            try {
+                java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+                byte[] hash = md.digest(raw.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                StringBuilder sb = new StringBuilder();
+                for (byte b : hash) {
+                    sb.append(String.format("%02x", b));
+                }
+                generatedKey = sb.toString();
+            } catch (Exception e) {
+                generatedKey = java.util.UUID.randomUUID().toString().replace("-", "");
+            }
+
+            try (InputStream in = getResource("config.yml")) {
+                if (in != null) {
+                    try (FileOutputStream out = new FileOutputStream(configFile)) {
+                        byte[] buffer = new byte[1024];
+                        int len;
+                        while ((len = in.read(buffer)) != -1) {
+                            out.write(buffer, 0, len);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Failed to copy default config.yml on Velocity", e);
+            }
+            
+            // Read and replace secret-token line in config.yml
+            try {
+                java.util.List<String> lines = java.nio.file.Files.readAllLines(configFile.toPath(), java.nio.charset.StandardCharsets.UTF_8);
+                boolean foundSec = false;
+                for (int i = 0; i < lines.size(); i++) {
+                    String line = lines.get(i).trim();
+                    if (line.startsWith("security:")) {
+                        foundSec = true;
+                    }
+                    if (foundSec && line.startsWith("secret-token:")) {
+                        lines.set(i, "  # Auto-generated secret key (Uncomment to activate):");
+                        lines.add(i + 1, "  # secret-token: \"" + generatedKey + "\"");
+                        lines.add(i + 2, "  secret-token: \"\"");
+                        break;
+                    }
+                }
+                java.nio.file.Files.write(configFile.toPath(), lines, java.nio.charset.StandardCharsets.UTF_8);
+            } catch (Exception e) {
+                logger.error("Failed to write auto-generated token in config.yml on Velocity", e);
+            }
+        }
+
         // Load platform-independent config
         pluginConfig = new PluginConfig(this);
+
+        if (pluginConfig.securitySecretToken == null || pluginConfig.securitySecretToken.isEmpty()) {
+            logger.error("=============================================================");
+            logger.error("RetroMail proxy module REQUIRES a security.secret-token!");
+            logger.error("For security, communication between proxy and backend must be");
+            logger.error("authenticated. Please set secret-token in your config.yml.");
+            logger.error("The plugin has generated a unique key commented out in config.");
+            logger.error("Plugin will go dark (no commands will sync).");
+            logger.error("=============================================================");
+            return;
+        }
 
         // Setup databases
         queueDatabaseManager = new VelocityDatabaseManager(this, logger, dataDirectory);
