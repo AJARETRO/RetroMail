@@ -5,7 +5,7 @@
 
     <groupId>dev.retro</groupId>
     <artifactId>papersmtp</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6-nightMare</version>
     <packaging>jar</packaging>
 
     <name>PaperSMTP</name>

@@ -337,6 +337,54 @@ public class SMTPManager {
         finalBody = finalBody.replaceAll("(?s)<div[^>]*>\\s*Mail System by.*?AJA_R3TR0.*?</div>\\s*</div>", "");
         finalBody = finalBody.replaceAll("(?s)<div[^>]*>\\s*Mail System by.*?AJA_RETRO.*?</div>\\s*</div>", "");
         
+        // Dynamically compute only the closing tags/comments that were actually left open
+        StringBuilder tagClosureBuilder = new StringBuilder();
+        String lowerBody = finalBody.toLowerCase();
+        
+        // 1. Close unclosed HTML comment
+        int lastOpenComment = lowerBody.lastIndexOf("<!--");
+        int lastCloseComment = lowerBody.lastIndexOf("-->");
+        if (lastOpenComment > lastCloseComment) {
+            tagClosureBuilder.append("-->\n");
+        }
+        
+        // 2. Safely close non-layout elements
+        tagClosureBuilder.append("</style>\n</script>\n</noembed>\n</noscript>\n</textarea>\n</title>\n");
+        
+        // 3. Safely balance layout elements to avoid breaking the outer template structure
+        String[] tagsToBalance = {"div", "span", "table", "tr", "td", "a", "p", "b", "i", "font"};
+        for (String tag : tagsToBalance) {
+            int openCount = 0;
+            int closeCount = 0;
+            
+            // Count open tags (<tag> or <tag ...)
+            int idx = 0;
+            while ((idx = lowerBody.indexOf("<" + tag, idx)) != -1) {
+                if (idx + tag.length() + 1 < lowerBody.length()) {
+                    char next = lowerBody.charAt(idx + tag.length() + 1);
+                    if (next == '>' || Character.isWhitespace(next) || next == '/') {
+                        openCount++;
+                    }
+                }
+                idx += tag.length() + 1;
+            }
+            
+            // Count close tags (</tag>)
+            idx = 0;
+            while ((idx = lowerBody.indexOf("</" + tag + ">", idx)) != -1) {
+                closeCount++;
+                idx += tag.length() + 3;
+            }
+            
+            if (openCount > closeCount) {
+                for (int i = 0; i < (openCount - closeCount); i++) {
+                    tagClosureBuilder.append("</").append(tag).append(">\n");
+                }
+            }
+        }
+        
+        String tagClosure = tagClosureBuilder.toString();
+
         String brandingHtml = 
             "<div style=\"margin-top: 30px; border-top: 1px solid #232835; padding-top: 20px; text-align: center; font-family: sans-serif;\">\n" +
             "    <div style=\"display: inline-block; background-color: #1a1e26; border-radius: 8px; padding: 15px; border: 1px solid #232835; text-align: center;\">\n" +
@@ -344,17 +392,19 @@ public class SMTPManager {
             "            Mail System by <span style=\"color: #a855f7; font-weight: 700;\">AJA_RETRO</span>\n" +
             "        </div>\n" +
             "        <div>\n" +
-            "            <a href=\"https://modrinth.com/user/AJA_R3TR0\" target=\"_blank\" style=\"color: #6366f1; text-decoration: none; font-size: 13px; font-weight: 600; background-color: #2e354f; padding: 6px 12px; border-radius: 4px; display: inline-block;\">https://modrinth.com/user/AJA_R3TR0</a>\n" +
+            "            <a href=\"https://modrinth.com/user/AJA_R3TR0\" target=\"_blank\" style=\"color: #6366f1; text-decoration: none; font-size: 13px; font-weight: 600; background-color: #2e354f; padding: 6px 12px; border-radius: 4px; display: inline-block; margin-right: 8px;\">Modrinth Profile</a>\n" +
+            "            <a href=\"https://ajaretro.dev\" target=\"_blank\" style=\"color: #6366f1; text-decoration: none; font-size: 13px; font-weight: 600; background-color: #2e354f; padding: 6px 12px; border-radius: 4px; display: inline-block;\">ajaretro.dev</a>\n" +
             "        </div>\n" +
             "    </div>\n" +
             "</div>";
+
         if (finalBody.contains("</body>")) {
-            finalBody = finalBody.replace("</body>", brandingHtml + "\n</body>");
+            finalBody = finalBody.replace("</body>", tagClosure + brandingHtml + "\n</body>");
         } else if (finalBody.contains("</div>")) {
             int lastDiv = finalBody.lastIndexOf("</div>");
-            finalBody = finalBody.substring(0, lastDiv) + brandingHtml + "\n" + finalBody.substring(lastDiv);
+            finalBody = finalBody.substring(0, lastDiv) + tagClosure + brandingHtml + "\n" + finalBody.substring(lastDiv);
         } else {
-            finalBody = finalBody + brandingHtml;
+            finalBody = finalBody + tagClosure + brandingHtml;
         }
 
         return finalBody;

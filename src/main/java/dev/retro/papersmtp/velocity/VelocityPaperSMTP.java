@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 
-@Plugin(id = "retromail", name = "RetroMail", version = "1.0.5", description = "Secure double-opt-in SMTP gateway integration that verifies player emails in-game and coordinates multi-server proxy queues.", authors = {"Retro"})
+@Plugin(id = "retromail", name = "RetroMail", version = "1.0.6-nightMare", description = "Secure double-opt-in SMTP gateway integration that verifies player emails in-game and coordinates multi-server proxy queues.", authors = {"Retro"})
 public class VelocityPaperSMTP implements MailPluginInterface {
     public static final MinecraftChannelIdentifier IDENTIFIER = MinecraftChannelIdentifier.from("papersmtp:queue");
 
