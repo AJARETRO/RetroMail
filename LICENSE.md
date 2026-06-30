@@ -41,7 +41,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 ## 💎 Support the Project & Enterprise Tiers
 
-If you love RetroMail and want to support its active development, or if you run a commercial network that requires dedicated enterprise backing, consider supporting the project on [Patreon](https://patreon.com/AJA_RETRO?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink#)!
+If you love RetroMail and want to support its active development, or if you run a commercial network that requires dedicated enterprise backing, consider supporting the project on [our Donation Page](https://ajaretro.dev/donate.html)!
 
 ### 🛠️ Tiers & Benefits
 
