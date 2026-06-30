@@ -3,6 +3,7 @@
   
   # 📬 RetroMail — Minecraft Email Verification & SMTP Newsletters (Paper/Spigot/Folia/Velocity/Bungee)
   
+  [![Official Website](https://img.shields.io/badge/Official-Website-red?style=for-the-badge&logo=googlechrome)](https://ajaretro.dev/retromail.html)
   [![Modrinth Download](https://img.shields.io/badge/Modrinth-Download-00AD5C?style=for-the-badge&logo=modrinth)](https://modrinth.com/plugin/retromail)
   [![GitHub Releases](https://img.shields.io/badge/GitHub-Releases-222222?style=for-the-badge&logo=github)](https://github.com/AJARETRO/RetroMail/releases)
   [![Licensing Portal](https://img.shields.io/badge/Licensing-Portal-indigo?style=for-the-badge&logo=auth0)](https://license.ajaretro.dev)
